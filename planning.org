@@ -1,0 +1,23 @@
+#+TITLE: SheetsBudget Planning
+#+SETUPFILE: ~/git/org-html-themes/setup/theme-bigblow.setup
+#+AUTHOR: Noam Stolero [[mailto:][stellern@gmail.com]]
+* First Steps:
+** DONE Access Gal and Noam budget sheet.
+   CLOSED: [2018-12-03 Mon 22:44]
+** TODO [#A] Reformat the Code:
+*** TODO Use [[https://github.com/QuickPermissions/QuickPermissions-Kotlin][QuickPermissions]]
+*** TODO Create modules:
+    1. Get/Set 
+    2. Activity
+ 
+* Required functions:
+** TODO [#A] List all entries.
+** TODO [#B] Create a new sheet.
+** TODO [#C] Add new entry for Gal or Noam
+   * Date
+   * Description
+   * Amount
+** TODO Show summary, (make sure its synced with sheet.)
+* User Interface:
+** TODO Create monthly views.
+** TODO Scroll between months.

@@ -351,17 +351,17 @@ public class Main2Activity extends Activity
          * @throws IOException
          */
         private List<String> getDataFromApi() throws IOException {
-            String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
-            String range = "Class Data!A2:E";
+            String spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE";
+            String range = "11/18!A3:I";
             List<String> results = new ArrayList<>();
             ValueRange response = this.mService.spreadsheets().values()
                     .get(spreadsheetId, range)
                     .execute();
             List<List<Object>> values = response.getValues();
             if (values != null) {
-                results.add("Name, Major");
+                results.add("פירוט, סכום");
                 for (List row : values) {
-                    results.add(row.get(0) + ", " + row.get(4));
+                    results.add(row.get(1) + ", " + row.get(2));
                 }
             }
             return results;
