@@ -1,5 +1,6 @@
 #+TITLE: SheetsBudget Planning
 #+SETUPFILE: ~/git/org-html-themes/setup/theme-bigblow.setup
+
 #+AUTHOR: Noam Stolero [[mailto:][stellern@gmail.com]]
 * First Steps:
 ** DONE Access Gal and Noam budget sheet.
