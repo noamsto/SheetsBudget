@@ -1,0 +1,62 @@
+package com.noam.kotlindev.sheetsbudget
+
+import android.util.Log
+import com.google.api.client.extensions.android.http.AndroidHttp
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import com.google.api.client.json.jackson2.JacksonFactory
+
+class SheetRequest(credential: GoogleAccountCredential, private val range: String, private  val  spreadsheetId: String,
+                   private val onRequestResultListener: OnRequestResultListener) : Runnable {
+
+    private var mService: com.google.api.services.sheets.v4.Sheets? = null
+
+    init {
+        val transport = AndroidHttp.newCompatibleTransport()
+        val jsonFactory = JacksonFactory.getDefaultInstance()
+        mService = com.google.api.services.sheets.v4.Sheets.Builder(
+            transport, jsonFactory, credential
+        )
+            .setApplicationName("SheetBudget")
+            .build()
+    }
+
+    override fun run() {
+        try {
+            onRequestResultListener.onResultSuccess(getDataFromApi()!!)
+        }catch (googleJsonResponseException: GoogleJsonResponseException){
+            Log.e(TAG, googleJsonResponseException.message)
+            onRequestResultListener.onResultFailed(googleJsonResponseException.details.message)
+        }catch (exception: Exception){
+            Log.e(TAG, exception.stackTrace.toString())
+            if (exception.message != null)
+            {
+                Log.e(TAG, exception.message)
+                onRequestResultListener.onResultFailed(exception.message!!)
+            }
+        }
+
+    }
+
+    private fun getDataFromApi(): List<List<String>> {
+        val response = this.mService!!.spreadsheets().values()
+            .get(spreadsheetId, range)
+            .execute()
+        val values = response.getValues()
+        values ?: throw Exception("Failed to get values from spreadsheet.")
+        return values.map { row ->
+            row.map { cell -> cell.toString() }
+        }
+    }
+
+
+    interface OnRequestResultListener{
+        fun onResultSuccess(list: List<List<String>>)
+        fun onResultFailed(error: String)
+
+    }
+
+    companion object {
+        const val TAG = "SheetRequest"
+    }
+}

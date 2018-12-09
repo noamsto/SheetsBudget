@@ -1,29 +1,63 @@
 package com.noam.kotlindev.sheetsbudget
 
 import android.Manifest
+import android.accounts.AccountManager
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.support.v7.widget.LinearLayoutManager
+import android.util.Log
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
+import com.noam.kotlindev.sheetsbudget.SheetRequest.OnRequestResultListener
+import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
+import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
+import kotlinx.android.synthetic.main.activity_spreadsheet_init.*
+import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
 
-class SpreadsheetInitActivity : AppCompatActivity() {
-    internal lateinit var mCredential: GoogleAccountCredential
+class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener {
+
+    val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
+
+    lateinit var range : String
+    private lateinit var mCredential: GoogleAccountCredential
     private lateinit var mHandlerThread: HandlerThread
     private lateinit var handler: Handler
+
+    private var expenseEntries = ArrayList<ExpenseEntry>()
+    private lateinit var expenseAdapter: ExpenseAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_spreadsheet_init)
+
+        val calendar = Calendar.getInstance()
+        month_picker.apply {
+            minValue = 0
+            maxValue = 12
+            value = calendar.get(Calendar.MONTH)
+        }
+        year_picker.apply {
+            year_picker.minValue = 2012
+            year_picker.maxValue = 2020
+            year_picker.value = calendar.get(Calendar.YEAR)
+        }
+
+        expenses_RV.layoutManager = LinearLayoutManager(this)
+        expenseAdapter = ExpenseAdapter(expenseEntries, this)
+        expenses_RV.adapter = expenseAdapter
+
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -33,6 +67,11 @@ class SpreadsheetInitActivity : AppCompatActivity() {
         mHandlerThread = HandlerThread("SheetsRequests")
         mHandlerThread.start()
         handler = Handler(mHandlerThread.looper)
+
+        make_request_btn.setOnClickListener {
+            range = "${month_picker.value}/${year_picker.value-2000}$GAL_RANGE"
+            getResultsFromApi()
+        }
 
     }
 
@@ -44,7 +83,7 @@ class SpreadsheetInitActivity : AppCompatActivity() {
         } else if (!isDeviceOnline()) {
             toast("No network connection available.")
         } else {
-            MakeRequestTask(mCredential).execute()
+            handler.post(SheetRequest(mCredential, range, spreadsheetId, this))
         }
     }
     private fun isGooglePlayServicesAvailable(): Boolean {
@@ -107,12 +146,67 @@ class SpreadsheetInitActivity : AppCompatActivity() {
         return networkInfo != null && networkInfo.isConnected
     }
 
+    /**
+     * Called when an activity launched here (specifically, AccountPicker
+     * and authorization) exits, giving you the requestCode you started it with,
+     * the resultCode it returned, and any additional data from it.
+     * @param requestCode code indicating which activity result is incoming.
+     * @param resultCode code indicating the result of the incoming
+     * activity result.
+     * @param data Intent (containing result data) returned by incoming
+     * activity result.
+     */
+    override fun onActivityResult(
+        requestCode: Int, resultCode: Int, data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            REQUEST_GOOGLE_PLAY_SERVICES -> if (resultCode != Activity.RESULT_OK) {
+                Log.e(TAG,
+                    "This app requires Google Play Services. Please install " + "Google Play Services on your device and relaunch this app."
+                )
+            } else {
+                getResultsFromApi()
+            }
+            REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null &&
+                data.extras != null
+            ) {
+                val accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+                if (accountName != null) {
+                    val settings = getPreferences(Context.MODE_PRIVATE)
+                    val editor = settings.edit()
+                    editor.putString(PREF_ACCOUNT_NAME, accountName)
+                    editor.apply()
+                    mCredential.selectedAccountName = accountName
+                    getResultsFromApi()
+                }
+            }
+        }
+    }
+
+
+    override fun onResultSuccess(list: List<List<String>>) {
+        expenseEntries.clear()
+        list.forEach { entry ->
+            expenseEntries.add(ExpenseEntry(entry[0], entry[1], entry[2]))
+        }
+        runOnUiThread {
+            expenseAdapter.notifyDataSetChanged()
+        }
+    }
+
+    override fun onResultFailed(error: String) {
+        longToast(error)
+    }
+
     companion object {
         private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS_READONLY)
         internal const val REQUEST_ACCOUNT_PICKER = 1000
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1002
+        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1001
         private const val PREF_ACCOUNT_NAME = "accountName"
-
+        private const val TAG = "SpreadsheetInitActivity"
+        const val GAL_RANGE = "!A3:C"
+        const val NOAM_RANGE = "!D3:I"
 
     }
 }
