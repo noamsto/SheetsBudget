@@ -3,6 +3,7 @@ package com.noam.kotlindev.sheetsbudget
 import android.util.Log
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
 
@@ -23,19 +24,16 @@ class SheetRequest(credential: GoogleAccountCredential, private val range: Strin
 
     override fun run() {
         try {
-            onRequestResultListener.onResultSuccess(getDataFromApi()!!)
+            onRequestResultListener.onResultSuccess(getDataFromApi())
         }catch (googleJsonResponseException: GoogleJsonResponseException){
             Log.e(TAG, googleJsonResponseException.message)
-            onRequestResultListener.onResultFailed(googleJsonResponseException.details.message)
-        }catch (exception: Exception){
-            Log.e(TAG, exception.stackTrace.toString())
-            if (exception.message != null)
-            {
-                Log.e(TAG, exception.message)
-                onRequestResultListener.onResultFailed(exception.message!!)
-            }
+            onRequestResultListener.onResultFailed(googleJsonResponseException)
+        }catch(userRecoverableAuthIOException :UserRecoverableAuthIOException) {
+            onRequestResultListener.onResultFailed(userRecoverableAuthIOException)
+        }catch(exception :java.lang.Exception) {
+            Log.e(TAG, exception.message)
+            onRequestResultListener.onResultFailed(exception)
         }
-
     }
 
     private fun getDataFromApi(): List<List<String>> {
@@ -49,11 +47,9 @@ class SheetRequest(credential: GoogleAccountCredential, private val range: Strin
         }
     }
 
-
     interface OnRequestResultListener{
         fun onResultSuccess(list: List<List<String>>)
-        fun onResultFailed(error: String)
-
+        fun onResultFailed(error: java.lang.Exception)
     }
 
     companion object {

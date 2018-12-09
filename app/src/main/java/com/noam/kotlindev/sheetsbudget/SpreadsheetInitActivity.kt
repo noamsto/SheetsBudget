@@ -6,15 +6,17 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
@@ -26,11 +28,12 @@ import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
 
-class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener {
+class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, SheetPost.OnPostSuccess {
 
-    val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
 
-    lateinit var range : String
+    private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
+
+    private lateinit var range : String
     private lateinit var mCredential: GoogleAccountCredential
     private lateinit var mHandlerThread: HandlerThread
     private lateinit var handler: Handler
@@ -84,6 +87,7 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener {
             toast("No network connection available.")
         } else {
             handler.post(SheetRequest(mCredential, range, spreadsheetId, this))
+//            handler.post(SheetPost(mCredential, range, spreadsheetId, "", this))
         }
     }
     private fun isGooglePlayServicesAvailable(): Boolean {
@@ -124,7 +128,7 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener {
      * @param connectionStatusCode code describing the presence (or lack of)
      * Google Play Services on this device.
      */
-    internal fun showGooglePlayServicesAvailabilityErrorDialog(
+    private fun showGooglePlayServicesAvailabilityErrorDialog(
         connectionStatusCode: Int
     ) {
         val apiAvailability = GoogleApiAvailability.getInstance()
@@ -195,18 +199,50 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener {
         }
     }
 
-    override fun onResultFailed(error: String) {
-        longToast(error)
+    override fun onResultFailed(error: Exception) {
+        when(error.javaClass){
+            UserRecoverableAuthIOException::class.java -> {
+                startActivityForResult(
+                    (error as UserRecoverableAuthIOException).intent, REQUEST_AUTHORIZATION
+                )
+            }
+            GoogleJsonResponseException::class.java -> {
+                longToast((error as GoogleJsonResponseException).details.message)
+            }
+            else ->{
+                longToast(error.message!!)
+            }
+        }
+    }
+
+    override fun onPostSuccess(message: String) {
+        longToast(message)
+    }
+
+    override fun onPostFailed(error: Exception) {
+        when(error.javaClass){
+            UserRecoverableAuthIOException::class.java -> {
+                startActivityForResult(
+                    (error as UserRecoverableAuthIOException).intent, REQUEST_AUTHORIZATION
+                )
+            }
+            GoogleJsonResponseException::class.java -> {
+                longToast((error as GoogleJsonResponseException).details.message)
+            }
+            else ->{
+                longToast(error.message!!)
+            }
+        }
     }
 
     companion object {
-        private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS_READONLY)
+        private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS)
         internal const val REQUEST_ACCOUNT_PICKER = 1000
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1001
+        internal const val REQUEST_AUTHORIZATION = 1001
+        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1002
         private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "SpreadsheetInitActivity"
         const val GAL_RANGE = "!A3:C"
         const val NOAM_RANGE = "!D3:I"
-
     }
 }
