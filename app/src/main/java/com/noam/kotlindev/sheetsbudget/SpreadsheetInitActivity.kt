@@ -192,7 +192,7 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, Sh
     override fun onResultSuccess(list: List<List<String>>) {
         expenseEntries.clear()
         list.forEach { entry ->
-            expenseEntries.add(ExpenseEntry(entry[0], entry[1], entry[2]))
+            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2]))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()
@@ -237,9 +237,9 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, Sh
 
     companion object {
         private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS)
-        internal const val REQUEST_ACCOUNT_PICKER = 1000
-        internal const val REQUEST_AUTHORIZATION = 1001
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1002
+        private const val REQUEST_ACCOUNT_PICKER = 1000
+        private const val REQUEST_AUTHORIZATION = 1001
+        private const val REQUEST_GOOGLE_PLAY_SERVICES = 1002
         private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "SpreadsheetInitActivity"
         const val GAL_RANGE = "!A3:C"

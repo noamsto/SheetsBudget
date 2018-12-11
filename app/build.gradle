@@ -47,6 +47,5 @@ dependencies {
         exclude group: 'org.apache.httpcomponents'
     }
 
-
 //    implementation 'pub.devrel:easypermissions:2.0.0'
 }

@@ -17,7 +17,12 @@ class ExpenseAdapter(private val expenseEntries: List<ExpenseEntry>, val context
 
     override fun onBindViewHolder(expenseVH: ExpenseViewHolder, position: Int) {
         val expenseEntry = expenseEntries[position]
-        expenseVH.date.text = expenseEntry.date
+        val date = if (expenseEntry.date.isBlank()){
+            "חסר תאריך"
+        }else{
+            expenseEntry.date
+        }
+        expenseVH.date.text = date
         expenseVH.description.text = expenseEntry.description
         expenseVH.amount.text = expenseEntry.amount
     }
@@ -30,8 +35,8 @@ class ExpenseAdapter(private val expenseEntries: List<ExpenseEntry>, val context
     override fun getItemCount() = expenseEntries.size
 
     class ExpenseViewHolder(expenseView: View): ViewHolder(expenseView){
-        val date = expenseView.date_tv
-        val description = expenseView.desc_tv
-        val amount = expenseView.amount_tv
+        val date = expenseView.date_tv!!
+        val description = expenseView.desc_tv!!
+        val amount = expenseView.amount_tv!!
     }
 }
