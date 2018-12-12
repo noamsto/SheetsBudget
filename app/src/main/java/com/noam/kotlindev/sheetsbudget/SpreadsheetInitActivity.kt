@@ -192,7 +192,7 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, Sh
     override fun onResultSuccess(list: List<List<String>>) {
         expenseEntries.clear()
         list.forEach { entry ->
-            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2]))
+            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], expenseEntries.size.plus(3)))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()
@@ -215,9 +215,11 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, Sh
         }
     }
 
-    override fun onPostSuccess(message: String) {
-        longToast(message)
+    override fun onPostSuccess(list: List<List<String>>) {
+        Log.d(TAG, list.toString())
+        longToast("Success!")
     }
+
 
     override fun onPostFailed(error: Exception) {
         when(error.javaClass){

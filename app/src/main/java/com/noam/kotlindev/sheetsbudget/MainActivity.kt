@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         val day = calender.get(Calendar.DAY_OF_MONTH)
         val month = calender.get(Calendar.MONTH).plus(1)
         val year = calender.get(Calendar.YEAR)
-        main_date_tv.text = "$day/$month/$year"
+        main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
 
         range = "$month/${year - 2000}"
 
@@ -76,8 +76,8 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
-                lastPostRequest = SheetPost(mCredential, range, spreadsheetId, mutableListOf(main_date_tv.text.toString(),
-                    desc_et.text.toString(), amount_et.text.toString()), this)
+                lastPostRequest = SheetPost(mCredential, spreadsheetId, ExpenseEntry(main_date_tv.text.toString(),
+                    desc_et.text.toString(), amount_et.text.toString(), expenseEntries.size + 3), this)
                 getResultsFromApi(lastPostRequest)
                 getResultsFromApi(monthRequest)
             }
@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         expenseEntries.clear()
         list.forEach { entry ->
             if (! entry.all { it.isBlank() })
-                expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2]))
+                expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], expenseEntries.size.plus(3)))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()
@@ -230,9 +230,10 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             }
         }
     }
-    override fun onPostSuccess(message: String) {
+    override fun onPostSuccess(list: List<List<String>>) {
+        Log.d(TAG, list.toString())
         longToast("Success!")
-    }
+    }\
 
     override fun onPostFailed(error: Exception) {
         when(error.javaClass){

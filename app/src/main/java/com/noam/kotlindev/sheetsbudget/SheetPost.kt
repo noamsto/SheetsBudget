@@ -7,14 +7,14 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.sheets.v4.model.ValueRange
-import com.noam.kotlindev.sheetsbudget.constants.AccountNames
-import com.noam.kotlindev.sheetsbudget.constants.Ranges
+import com.noam.kotlindev.sheetsbudget.constants.AccountInfo
+import com.noam.kotlindev.sheetsbudget.constants.Range
+import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import org.jetbrains.anko.getStackTraceString
-import java.util.*
 
 class SheetPost (
-    private val credential: GoogleAccountCredential, private val range: String, private  val  spreadsheetId: String,
-    private val content: MutableList<String>, private val onRequestResultListener: OnPostSuccess
+    private val credential: GoogleAccountCredential, private  val  spreadsheetId: String,
+    private val expenseEntry: ExpenseEntry, private val onRequestResultListener: OnPostSuccess
 ) : Runnable {
 
     private var mService: com.google.api.services.sheets.v4.Sheets? = null
@@ -31,8 +31,7 @@ class SheetPost (
 
     override fun run() {
         try {
-            getDataFromApi()
-            onRequestResultListener.onPostSuccess("Success!")
+            onRequestResultListener.onPostSuccess(getDataFromApi())
         } catch (googleJsonResponseException: GoogleJsonResponseException) {
             Log.e(TAG, googleJsonResponseException.message)
             onRequestResultListener.onPostFailed(googleJsonResponseException)
@@ -44,28 +43,46 @@ class SheetPost (
         }
     }
 
-    private fun getDataFromApi(){
+    private fun getDataFromApi(): List<List<String>> {
         val name = credential.selectedAccountName
-        val requestRange = if (name == AccountNames.NOAM_ACCOUNT.email){
-            content.addAll(0, listOf("","",""))
-            "$range!${Ranges.NOAM_RANGE.range}"
+        val accountInfo = if (name == AccountInfo.NOAM_ACCOUNT.email){
+            AccountInfo.NOAM_ACCOUNT
         }else{
-            "$range!${Ranges.GAL_RANGE.range}"
+            AccountInfo.GAL_ACCOUNT
         }
+        val content = expenseEntry.getValues()
+        val sheet = expenseEntry.date.removeRange(0, expenseEntry.date.indexOf("/").plus(1))
+        val requestRange = "$sheet!${accountInfo.startCell}${expenseEntry.row}:" +
+                "${accountInfo.endCell}${expenseEntry.row}"
+//        val requestRange = if (name == AccountInfo.NOAM_ACCOUNT.email){
+//            content.addAll(0, listOf("","",""))
+//            "$range!${Range.NOAM_RANGE.range}"
+//        }else{
+//            "$range!${Range.GAL_RANGE.range}"
+//        }
         val requestBody = ValueRange().apply {
             range = requestRange
             majorDimension = "ROWS"
             setValues(listOf(content))
         }
-        this.mService!!.spreadsheets().values().append(spreadsheetId, requestRange, requestBody).apply {
+        val response = this.mService!!.spreadsheets().values().update(spreadsheetId, requestRange,
+            requestBody).apply {
             valueInputOption = "USER_ENTERED"
+            includeValuesInResponse = true
         }.execute()
+        response ?: throw Exception("Failed to get values from spreadsheet.")
+        val updatedValues = response.updatedData.getValues()
+        return updatedValues.map { row ->
+            row.map { cell -> cell.toString().trimStart().trimEnd() }
+        }
+
     }
     interface OnPostSuccess{
-        fun onPostSuccess(message: String)
-        fun onPostFailed(error: Exception)
+        fun onPostSuccess(list: List<List<String>>)
+        fun onPostFailed(error: java.lang.Exception)
     }
-    companion object {
+
+        companion object {
         const val TAG = "SheetRequest"
     }
 }
