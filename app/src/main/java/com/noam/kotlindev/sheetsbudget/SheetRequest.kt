@@ -40,11 +40,7 @@ class SheetRequest(private val credential: GoogleAccountCredential, private val 
 
     private fun getDataFromApi(): List<List<String>> {
         val name = credential.selectedAccountName
-        val requestRange = if (name == AccountInfo.NOAM_ACCOUNT.email){
-            "$range!${Range.NOAM_RANGE.range}"
-        }else{
-            "$range!${Range.GAL_RANGE.range}"
-        }
+        val requestRange = "testing!${Range.VALUES.range}"
         val response = this.mService!!.spreadsheets().values()
             .get(spreadsheetId, requestRange)
             .execute()

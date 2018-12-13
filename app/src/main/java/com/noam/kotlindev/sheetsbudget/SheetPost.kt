@@ -52,9 +52,8 @@ class SheetPost (
         }
         val content = expenseEntry.getValues()
         val sheet = expenseEntry.date.removeRange(0, expenseEntry.date.indexOf("/").plus(1))
-        val requestRange = "$sheet!${accountInfo.startCell}${expenseEntry.row}:" +
-                "${accountInfo.endCell}${expenseEntry.row}"
-//        val requestRange = if (name == AccountInfo.NOAM_ACCOUNT.email){
+        val requestRange = "$sheet!A${expenseEntry.row}:" +"D${expenseEntry.row}"
+//        val requestRange = if (name == AccountInfo.NOAM_ACCOUNT.email){l
 //            content.addAll(0, listOf("","",""))
 //            "$range!${Range.NOAM_RANGE.range}"
 //        }else{

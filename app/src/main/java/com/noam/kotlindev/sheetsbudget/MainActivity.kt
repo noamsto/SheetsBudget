@@ -21,6 +21,7 @@ import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
+import com.noam.kotlindev.sheetsbudget.constants.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.longToast
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     private lateinit var handler: Handler
     private lateinit var monthRequest: SheetRequest
     private lateinit var lastPostRequest: SheetPost
-
+    private var accountEmail: String? = null
 
     private var expenseEntries = ArrayList<ExpenseEntry>()
     private lateinit var expenseAdapter: ExpenseAdapter
@@ -186,13 +187,13 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null &&
                 data.extras != null
             ) {
-                val accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-                if (accountName != null) {
+                accountEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+                if (accountEmail != null) {
                     val settings = getPreferences(Context.MODE_PRIVATE)
                     val editor = settings.edit()
-                    editor.putString(PREF_ACCOUNT_NAME, accountName)
+                    editor.putString(PREF_ACCOUNT_NAME, accountEmail)
                     editor.apply()
-                    mCredential.selectedAccountName = accountName
+                    mCredential.selectedAccountName = accountEmail
                     if (requestCode == REQUEST_AUTHORIZATION_REQUEST || requestCode == REQUEST_ACCOUNT_PICKER)
                         getResultsFromApi(monthRequest)
                     else{
@@ -206,9 +207,14 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
 
     override fun onResultSuccess(list: List<List<String>>) {
         expenseEntries.clear()
+        val accountName = if (AccountInfo.GAL_ACCOUNT.email == accountEmail)
+            AccountInfo.GAL_ACCOUNT.userName
+        else
+            AccountInfo.NOAM_ACCOUNT.userName
+
         list.forEach { entry ->
-            if (! entry.all { it.isBlank() })
-                expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], expenseEntries.size.plus(3)))
+            if (! entry.all { it.isBlank() } && entry[0] == accountName)
+                expenseEntries.add(0, ExpenseEntry(entry[1], entry[2], entry[3], expenseEntries.size.plus(3)))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()
@@ -233,7 +239,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     override fun onPostSuccess(list: List<List<String>>) {
         Log.d(TAG, list.toString())
         longToast("Success!")
-    }\
+    }
 
     override fun onPostFailed(error: Exception) {
         when(error.javaClass){
