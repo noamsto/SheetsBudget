@@ -24,7 +24,7 @@ class ExpenseAdapter(val context: Context)
     init {
         sortedExpensesList = SortedList<ExpenseEntry>(ExpenseEntry::class.java, object: SortedListAdapterCallback<ExpenseEntry>(this){
             override fun areItemsTheSame(p0: ExpenseEntry?, p1: ExpenseEntry?) = false
-            override fun compare(p0: ExpenseEntry?, p1: ExpenseEntry?) = p0!!.compareTo(p1!!)
+            override fun compare(p0: ExpenseEntry?, p1: ExpenseEntry?) = p1!!.compareTo(p0!!)
             override fun areContentsTheSame(p0: ExpenseEntry?, p1: ExpenseEntry?) = false
 
         })
