@@ -14,7 +14,7 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/month_expenses_rv"
         android:layout_margin="7dp"
-        app:layout_constraintBottom_toTopOf="@id/main_date_tv"
+        app:layout_constraintBottom_toTopOf="@id/input_block"
         app:layout_constraintVertical_bias="0"
         app:layout_constraintTop_toBottomOf="@id/expense_entry_lt"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,68 +26,113 @@
 
     </android.support.v7.widget.RecyclerView>
 
-    <TextView
+
+    <android.support.constraint.Guideline
+        android:id="@+id/vertical_guide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.7"/>
+
+    <android.support.constraint.Guideline
+        android:id="@+id/horizontal_guide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.6"/>
+
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:id="@+id/input_block"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/horizontal_guide"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/vertical_guide"
+        app:layout_constraintVertical_bias="0"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constrainedWidth="true"
+        app:layout_constrainedHeight="true"
+
+        >
+
+
+        <TextView
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_bias="0"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constrainedHeight="true"
+            android:layout_margin="7dp"
+            android:id="@+id/main_date_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="תאריך"
+            android:textSize="22sp"
+            />
+
+        <EditText
+            android:id="@+id/desc_et"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="פירוט"
+            android:inputType="text"
+            android:textSize="22sp"
+            android:layout_margin="4dp"
+            app:layout_constrainedHeight="true"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintTop_toBottomOf="@id/main_date_tv"
+            app:layout_constraintStart_toStartOf="@id/main_date_tv"
+            app:layout_constraintEnd_toStartOf="@id/send_btn"
+            app:layout_constraintHorizontal_bias="0"
+            />
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="סכום"
+            android:id="@+id/amount_et"
+            android:inputType="number"
+            android:textSize="22sp"
+            android:layout_margin="4dp"
+            app:layout_constraintStart_toStartOf="@id/main_date_tv"
+            app:layout_constraintTop_toBottomOf="@id/desc_et"
+            app:layout_constraintEnd_toStartOf="@id/send_btn"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constrainedHeight="true"
+            app:layout_constrainedWidth="true"
+            />
+
+        <Button
+            android:id="@+id/send_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="שליחה"
+            android:layout_margin="7dp"
+            app:layout_constraintTop_toTopOf="@id/desc_et"
+            app:layout_constraintBottom_toBottomOf="@id/amount_et"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.8"
+            app:layout_constrainedHeight="true"
+            app:layout_constrainedWidth="true"
+            />
+
+    </android.support.constraint.ConstraintLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/summary_block"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/horizontal_guide"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.6"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constrainedHeight="true"
-        android:layout_margin="7dp"
-        android:id="@+id/main_date_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="תאריך"
-        android:textSize="22sp"
-        />
+        >
 
-
-    <EditText
-        android:id="@+id/desc_et"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="פירוט"
-        android:inputType="text"
-        android:textSize="22sp"
-        android:layout_margin="4dp"
-        app:layout_constrainedHeight="true"
-        app:layout_constrainedWidth="true"
-        app:layout_constraintTop_toBottomOf="@id/main_date_tv"
-        app:layout_constraintStart_toStartOf="@id/main_date_tv"
-        app:layout_constraintEnd_toStartOf="@id/send_btn"
-        app:layout_constraintHorizontal_bias="0"
-        />
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="סכום"
-        android:id="@+id/amount_et"
-        android:inputType="number"
-        android:textSize="22sp"
-        android:layout_margin="4dp"
-        app:layout_constraintStart_toStartOf="@id/main_date_tv"
-        app:layout_constraintTop_toBottomOf="@id/desc_et"
-        app:layout_constraintEnd_toStartOf="@id/send_btn"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constrainedHeight="true"
-        app:layout_constrainedWidth="true"
-        />
-
-    <Button
-        android:id="@+id/send_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="שליחה"
-        android:layout_margin="7dp"
-        app:layout_constraintTop_toTopOf="@id/desc_et"
-        app:layout_constraintBottom_toBottomOf="@id/amount_et"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintHorizontal_bias="0.8"
-        app:layout_constrainedHeight="true"
-        app:layout_constrainedWidth="true"
-        />
+    </android.support.constraint.ConstraintLayout>
 
 
 

@@ -8,7 +8,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.noam.kotlindev.sheetsbudget.constants.Range
 
-class SheetRequest(private val credential: GoogleAccountCredential, private val sheet: String, private  val  spreadsheetId: String,
+class SheetRequest(credential: GoogleAccountCredential, private val sheet: String, private  val  spreadsheetId: String,
                    private val onRequestResultListener: OnRequestResultListener) : Runnable {
 
     private var mService: com.google.api.services.sheets.v4.Sheets? = null

@@ -10,9 +10,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.util.SortedList
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.util.SortedListAdapterCallback
 import android.util.Log
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -29,12 +27,10 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
-import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess {
 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
-
     private lateinit var sheet : String
     private lateinit var mCredential: GoogleAccountCredential
     private lateinit var mHandlerThread: HandlerThread
@@ -42,13 +38,6 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     private lateinit var monthRequest: SheetRequest
     private lateinit var lastPostRequest: SheetPost
     private var accountEmail: String? = null
-
-
-
-    private var expenseEntries = ArrayList<ExpenseEntry>()
-
-
-
     private lateinit var expenseAdapter: ExpenseAdapter
 
 
@@ -57,8 +46,9 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         setContentView(R.layout.activity_main)
 
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
-        expenseAdapter = ExpenseAdapter(expenseEntries, this)
+        expenseAdapter = ExpenseAdapter(this)
         month_expenses_rv.adapter = expenseAdapter
+
 
 
         // Initialize credentials and service object.
@@ -87,7 +77,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
                 lastPostRequest = SheetPost(mCredential, spreadsheetId, sheet, ExpenseEntry(AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
-                    desc_et.text.toString(), amount_et.text.toString(), expenseEntries.size + 2), this)
+                    desc_et.text.toString(), amount_et.text.toString(), expenseAdapter.size() + 2), this)
                 getResultsFromApi(lastPostRequest)
                 getResultsFromApi(monthRequest)
             }
@@ -210,14 +200,17 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
 
 
     override fun onResultSuccess(list: List<List<String>>) {
-        expenseEntries.clear()
-        list.forEach { entry ->
-            if (! entry.all { it.isBlank() })
-                expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseEntries.size.plus(2)))
-        }
         runOnUiThread {
-            expenseAdapter.notifyDataSetChanged()
+            expenseAdapter.clear()
+            list.forEach { entry ->
+                if (entry.size == 4)
+                    expenseAdapter.add(ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseAdapter.size().plus(2) ))
         }
+
+        }
+//        runOnUiThread {
+////            expenseAdapter.notifyDataSetChanged()
+//        }
     }
 
     override fun onResultFailed(error: Exception) {
