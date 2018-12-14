@@ -6,10 +6,9 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
-import com.noam.kotlindev.sheetsbudget.constants.AccountInfo
 import com.noam.kotlindev.sheetsbudget.constants.Range
 
-class SheetRequest(private val credential: GoogleAccountCredential, private val range: String, private  val  spreadsheetId: String,
+class SheetRequest(private val credential: GoogleAccountCredential, private val sheet: String, private  val  spreadsheetId: String,
                    private val onRequestResultListener: OnRequestResultListener) : Runnable {
 
     private var mService: com.google.api.services.sheets.v4.Sheets? = null
@@ -39,8 +38,7 @@ class SheetRequest(private val credential: GoogleAccountCredential, private val 
     }
 
     private fun getDataFromApi(): List<List<String>> {
-        val name = credential.selectedAccountName
-        val requestRange = "testing!${Range.VALUES.range}"
+        val requestRange = "$sheet!${Range.START.range}:${Range.END.range}"
         val response = this.mService!!.spreadsheets().values()
             .get(spreadsheetId, requestRange)
             .execute()

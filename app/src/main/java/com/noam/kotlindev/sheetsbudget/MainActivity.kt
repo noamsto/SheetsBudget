@@ -10,7 +10,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.util.SortedList
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.util.SortedListAdapterCallback
 import android.util.Log
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -21,18 +23,19 @@ import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
-import com.noam.kotlindev.sheetsbudget.constants.AccountInfo
+import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess {
 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
 
-    private lateinit var range : String
+    private lateinit var sheet : String
     private lateinit var mCredential: GoogleAccountCredential
     private lateinit var mHandlerThread: HandlerThread
     private lateinit var handler: Handler
@@ -40,7 +43,12 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     private lateinit var lastPostRequest: SheetPost
     private var accountEmail: String? = null
 
+
+
     private var expenseEntries = ArrayList<ExpenseEntry>()
+
+
+
     private lateinit var expenseAdapter: ExpenseAdapter
 
 
@@ -62,23 +70,24 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         mHandlerThread.start()
         handler = Handler(mHandlerThread.looper)
 
+        chooseAccount()
+
         val calender = Calendar.getInstance()
         val day = calender.get(Calendar.DAY_OF_MONTH)
         val month = calender.get(Calendar.MONTH).plus(1)
         val year = calender.get(Calendar.YEAR)
+
         main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
+        sheet = "$month/${year - 2000}"
+        monthRequest = SheetRequest(mCredential, sheet, spreadsheetId, this)
 
-        range = "$month/${year - 2000}"
-
-        monthRequest = SheetRequest(mCredential, range, spreadsheetId, this)
         getResultsFromApi(monthRequest)
-
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
-                lastPostRequest = SheetPost(mCredential, spreadsheetId, ExpenseEntry(main_date_tv.text.toString(),
-                    desc_et.text.toString(), amount_et.text.toString(), expenseEntries.size + 3), this)
+                lastPostRequest = SheetPost(mCredential, spreadsheetId, sheet, ExpenseEntry(AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
+                    desc_et.text.toString(), amount_et.text.toString(), expenseEntries.size + 2), this)
                 getResultsFromApi(lastPostRequest)
                 getResultsFromApi(monthRequest)
             }
@@ -109,7 +118,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             .getString(PREF_ACCOUNT_NAME, null)
         if (accountName != null) {
             mCredential.selectedAccountName = accountName
-            getResultsFromApi(monthRequest)
+            accountEmail = accountName
         } else {
             // Start a dialog from which the user can choose an account
             startActivityForResult(
@@ -194,11 +203,6 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
                     editor.putString(PREF_ACCOUNT_NAME, accountEmail)
                     editor.apply()
                     mCredential.selectedAccountName = accountEmail
-                    if (requestCode == REQUEST_AUTHORIZATION_REQUEST || requestCode == REQUEST_ACCOUNT_PICKER)
-                        getResultsFromApi(monthRequest)
-                    else{
-                        getResultsFromApi(lastPostRequest)
-                    }
                 }
             }
         }
@@ -207,14 +211,9 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
 
     override fun onResultSuccess(list: List<List<String>>) {
         expenseEntries.clear()
-        val accountName = if (AccountInfo.GAL_ACCOUNT.email == accountEmail)
-            AccountInfo.GAL_ACCOUNT.userName
-        else
-            AccountInfo.NOAM_ACCOUNT.userName
-
         list.forEach { entry ->
-            if (! entry.all { it.isBlank() } && entry[0] == accountName)
-                expenseEntries.add(0, ExpenseEntry(entry[1], entry[2], entry[3], expenseEntries.size.plus(3)))
+            if (! entry.all { it.isBlank() })
+                expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseEntries.size.plus(2)))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()

@@ -6,14 +6,12 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.services.sheets.v4.model.Request
 import com.google.api.services.sheets.v4.model.ValueRange
-import com.noam.kotlindev.sheetsbudget.constants.AccountInfo
-import com.noam.kotlindev.sheetsbudget.constants.Range
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import org.jetbrains.anko.getStackTraceString
 
-class SheetPost (
-    private val credential: GoogleAccountCredential, private  val  spreadsheetId: String,
+class SheetPost (credential: GoogleAccountCredential, private  val  spreadsheetId: String, private val sheet: String,
     private val expenseEntry: ExpenseEntry, private val onRequestResultListener: OnPostSuccess
 ) : Runnable {
 
@@ -44,21 +42,8 @@ class SheetPost (
     }
 
     private fun getDataFromApi(): List<List<String>> {
-        val name = credential.selectedAccountName
-        val accountInfo = if (name == AccountInfo.NOAM_ACCOUNT.email){
-            AccountInfo.NOAM_ACCOUNT
-        }else{
-            AccountInfo.GAL_ACCOUNT
-        }
         val content = expenseEntry.getValues()
-        val sheet = expenseEntry.date.removeRange(0, expenseEntry.date.indexOf("/").plus(1))
         val requestRange = "$sheet!A${expenseEntry.row}:" +"D${expenseEntry.row}"
-//        val requestRange = if (name == AccountInfo.NOAM_ACCOUNT.email){l
-//            content.addAll(0, listOf("","",""))
-//            "$range!${Range.NOAM_RANGE.range}"
-//        }else{
-//            "$range!${Range.GAL_RANGE.range}"
-//        }
         val requestBody = ValueRange().apply {
             range = requestRange
             majorDimension = "ROWS"
@@ -74,7 +59,6 @@ class SheetPost (
         return updatedValues.map { row ->
             row.map { cell -> cell.toString().trimStart().trimEnd() }
         }
-
     }
     interface OnPostSuccess{
         fun onPostSuccess(list: List<List<String>>)

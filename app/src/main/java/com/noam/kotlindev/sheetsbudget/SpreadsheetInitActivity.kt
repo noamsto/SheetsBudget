@@ -192,7 +192,7 @@ class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, Sh
     override fun onResultSuccess(list: List<List<String>>) {
         expenseEntries.clear()
         list.forEach { entry ->
-            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], expenseEntries.size.plus(3)))
+            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseEntries.size.plus(3)))
         }
         runOnUiThread {
             expenseAdapter.notifyDataSetChanged()
