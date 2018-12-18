@@ -1,120 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/expense_entry_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layoutDirection="rtl"
-    android:id="@+id/expense_entry_layout">
+    android:layoutDirection="rtl">
 
 
+    <CheckBox
+        android:id="@+id/checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/right_divider"
+        app:layout_constraintHorizontal_bias="0"
+        android:layout_marginStart="2dp"
+        />
 
 
     <TextView
         android:id="@+id/name_tv"
-        android:layout_marginStart="7dp"
-        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
-        app:layout_constraintEnd_toStartOf="@id/right_divider"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constrainedWidth="true"
-        android:textSize="@dimen/expense_entry_text_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="שם"
         android:textAlignment="inherit"
+        android:textSize="@dimen/expense_entry_text_size"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
+        app:layout_constraintEnd_toStartOf="@id/right_divider"
+        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="0dp"
+        android:layout_marginStart="0dp"
+
         />
 
 
     <TextView
         android:id="@+id/date_tv"
-        android:layout_marginStart="7dp"
-        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
-        app:layout_constraintEnd_toStartOf="@id/mid_divider"
-        app:layout_constraintStart_toStartOf="@id/right_divider"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constrainedWidth="true"
-        android:textSize="@dimen/expense_entry_text_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="7dp"
         android:text="תאריך"
         android:textAlignment="inherit"
-        />
-
-
+        android:textSize="@dimen/expense_entry_text_size"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
+        app:layout_constraintEnd_toStartOf="@id/mid_divider"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="@id/right_divider" />
 
 
     <TextView
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="@id/mid_divider"
-        app:layout_constraintEnd_toEndOf="@id/left_divider"
-        app:layout_constrainedWidth="true"
-        app:layout_constraintHorizontal_bias="0.1"
+        android:id="@+id/desc_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="7dp"
         android:layout_marginBottom="7dp"
-        android:id="@+id/desc_tv"
-        android:textSize="@dimen/expense_entry_text_size"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:gravity="start"
         android:text="פירוט"
         android:textAlignment="inherit"
-        android:gravity="start"
-        />
+        android:textSize="@dimen/expense_entry_text_size"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/left_divider"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="@id/mid_divider"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:layout_marginEnd="7dp"
-        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/left_divider"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constrainedWidth="true"
         android:id="@+id/amount_tv"
-        android:textSize="@dimen/expense_entry_text_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="7dp"
         android:text="סכום"
-        android:textAlignment="inherit"/>
-
-
-
-
-
-    <View style="@style/Divider_Horizon"
-        app:layout_constraintTop_toBottomOf="@id/desc_tv"
-        />
-
-
-    <View style="@style/Divider_Vertical"
-        android:id="@+id/right_divider"
-        app:layout_constraintTop_toTopOf="@id/desc_tv"
-        app:layout_constraintBottom_toBottomOf="@id/desc_tv"
-        app:layout_constraintStart_toStartOf="parent"
+        android:textAlignment="inherit"
+        android:textSize="@dimen/expense_entry_text_size"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.20"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toEndOf="@id/left_divider" />
+
+
+    <View
+        style="@style/Divider_Horizon"
+        app:layout_constraintTop_toBottomOf="@id/desc_tv" />
+
+
+    <View
+        android:id="@+id/right_divider"
+        style="@style/Divider_Vertical"
         app:layout_constrainedHeight="true"
-        />
-
-
-
-    <View style="@style/Divider_Vertical"
-        android:id="@+id/mid_divider"
-        app:layout_constraintTop_toTopOf="@id/desc_tv"
         app:layout_constraintBottom_toBottomOf="@id/desc_tv"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.25"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/desc_tv" />
+
+
+    <View
+        android:id="@+id/mid_divider"
+        style="@style/Divider_Vertical"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toBottomOf="@id/desc_tv"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.45"
-        app:layout_constrainedHeight="true"
-        />
-
-
-    <View style="@style/Divider_Vertical"
-        android:id="@+id/left_divider"
-        app:layout_constraintTop_toTopOf="@id/desc_tv"
-        app:layout_constraintBottom_toBottomOf="@id/desc_tv"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/desc_tv" />
+
+
+    <View
+        android:id="@+id/left_divider"
+        style="@style/Divider_Vertical"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toBottomOf="@id/desc_tv"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.80"
-        app:layout_constrainedHeight="true"
-        />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/desc_tv" />
 
 </android.support.constraint.ConstraintLayout>

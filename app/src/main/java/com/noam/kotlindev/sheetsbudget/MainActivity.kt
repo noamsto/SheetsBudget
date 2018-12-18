@@ -12,6 +12,8 @@ import android.os.HandlerThread
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.view.View
+import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -24,11 +26,15 @@ import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.expense_entry.view.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
 
-class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess {
+class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess,
+    ExpenseAdapter.ItemSelectedListener, SheetDeleteRow.OnDeleteListener {
+
+
 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
     private lateinit var sheet : String
@@ -45,11 +51,11 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        expense_entry_lt.checkbox.visibility = View.GONE
+
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
-        expenseAdapter = ExpenseAdapter(this)
+        expenseAdapter = ExpenseAdapter(this, this)
         month_expenses_rv.adapter = expenseAdapter
-
-
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -81,6 +87,16 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
                 getResultsFromApi(lastPostRequest)
                 getResultsFromApi(monthRequest)
             }
+        }
+
+        delete_btn.setOnClickListener {
+            expenseAdapter.selectedExpensesList.forEach { expense ->
+//                val deletePost = SheetPost(mCredential, spreadsheetId, sheet,
+//                    ExpenseEntry("","","","",expense.row), this)
+//                getResultsFromApi(deletePost)
+                getResultsFromApi(SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this))
+            }
+            expenseAdapter.removeSelected()
         }
     }
 
@@ -257,5 +273,23 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1003
         private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "MainActivity"
+    }
+
+    override fun onItemsSelected()
+    {
+        delete_btn.visibility = View.VISIBLE
+    }
+
+
+    override fun noItemsSelected() {
+        delete_btn.visibility = View.GONE
+    }
+    override fun onDeleteSuccess() {
+        toast("Deleted!")
+    }
+
+    override fun onDeleteFailed(error: java.lang.Exception) {
+        Log.e(TAG, error.message)
+        toast(error.message.toString())
     }
 }

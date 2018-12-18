@@ -10,4 +10,5 @@ class ExpenseEntry(val name: String, val date: String, val description: String, 
     }
 
     fun getValues()= mutableListOf(name, date, description, amount)
+
 }

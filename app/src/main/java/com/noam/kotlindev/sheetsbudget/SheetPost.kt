@@ -56,6 +56,7 @@ class SheetPost (credential: GoogleAccountCredential, private  val  spreadsheetI
         }.execute()
         response ?: throw Exception("Failed to get values from spreadsheet.")
         val updatedValues = response.updatedData.getValues()
+        updatedValues ?: return mutableListOf()
         return updatedValues.map { row ->
             row.map { cell -> cell.toString().trimStart().trimEnd() }
         }
