@@ -294,7 +294,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             currentMonthExpense.removeAll(sortedExpenseAdapter.selectedExpensesList)
             sortedExpenseAdapter.removeSelected()
             showCalculatedSums()
-            delete_btn.visibility = View.GONEl
+            delete_btn.visibility = View.GONE
         }
     }
 
