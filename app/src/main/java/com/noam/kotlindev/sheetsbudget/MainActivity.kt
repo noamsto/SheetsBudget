@@ -248,6 +248,10 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     override fun onPostSuccess(list: List<List<String>>) {
         Log.d(TAG, list.toString())
         longToast("Success!")
+        runOnUiThread {
+            desc_et.setText("")
+            amount_et.setText("")
+        }
     }
 
     override fun onPostFailed(error: Exception) {
@@ -290,6 +294,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             currentMonthExpense.removeAll(sortedExpenseAdapter.selectedExpensesList)
             sortedExpenseAdapter.removeSelected()
             showCalculatedSums()
+            delete_btn.visibility = View.GONEl
         }
     }
 
