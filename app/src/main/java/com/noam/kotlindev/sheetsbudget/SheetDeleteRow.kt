@@ -7,10 +7,7 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.sheets.v4.Sheets
-import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest
-import com.google.api.services.sheets.v4.model.GridRange
-import com.google.api.services.sheets.v4.model.Request
-import com.google.api.services.sheets.v4.model.ValueRange
+import com.google.api.services.sheets.v4.model.*
 import org.jetbrains.anko.getStackTraceString
 
 class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreadsheetId: String, private val sheet: String,
@@ -55,18 +52,19 @@ class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreads
         val sheetId: Int = responseSheetID.sheets[0].properties.sheetId
 
 
-        val deleteRange1 = GridRange().apply {
+        val gridRange = GridRange().apply {
             this.sheetId = sheetId
             startRowIndex = row
-            endRowIndex = row
-            startColumnIndex = 1
+            endRowIndex = row.plus(1)
+            startColumnIndex = 0
             endColumnIndex = 4
         }
 
-
-        val deleteRowRequest = Request().setDeleteRange(
-            deleteRange1
-        )
+        val deleteRangeRequest = DeleteRangeRequest().apply {
+            range = gridRange
+            shiftDimension = "ROWS"
+        }
+        val deleteRowRequest = Request().setDeleteRange(deleteRangeRequest)
 
         val batchUpdateSpreadsheetRequest = BatchUpdateSpreadsheetRequest()
             .setRequests(mutableListOf(deleteRowRequest))

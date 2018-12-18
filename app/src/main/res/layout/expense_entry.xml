@@ -28,13 +28,12 @@
         android:textAlignment="inherit"
         android:textSize="@dimen/expense_entry_text_size"
         app:layout_constrainedWidth="true"
-        app:layout_constraintBaseline_toBaselineOf="@id/desc_tv"
+        app:layout_constraintBaseline_toBaselineOf="@id/date_tv"
         app:layout_constraintEnd_toStartOf="@id/right_divider"
-        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintHorizontal_bias="0"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_margin="0dp"
-        android:layout_marginStart="0dp"
-
+        android:layout_marginStart="35dp"
+        android:gravity="start"
         />
 
 
@@ -96,7 +95,7 @@
         app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toBottomOf="@id/desc_tv"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.25"
+        app:layout_constraintHorizontal_bias="0.2"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/desc_tv" />
 

@@ -21,7 +21,7 @@
 //import com.google.api.services.sheets.v4.SheetsScopes
 //import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 //import com.noam.kotlindev.sheetsbudget.SheetRequest.OnRequestResultListener
-//import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
+//import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 //import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 //import kotlinx.android.synthetic.main.activity_spreadsheet_init.*
 //import org.jetbrains.anko.longToast
@@ -39,7 +39,7 @@
 //    private lateinit var handler: Handler
 //
 //    private var expenseEntries = ArrayList<ExpenseEntry>()
-//    private lateinit var expenseAdapter: ExpenseAdapter
+//    private lateinit var expenseAdapter: SortedExpenseAdapter
 //
 //    override fun onCreate(savedInstanceState: Bundle?) {
 //        super.onCreate(savedInstanceState)
@@ -58,7 +58,7 @@
 //        }
 //
 //        expenses_RV.layoutManager = LinearLayoutManager(this)
-//        expenseAdapter = ExpenseAdapter(expenseEntries, this)
+//        expenseAdapter = SortedExpenseAdapter(expenseEntries, this)
 //        expenses_RV.adapter = expenseAdapter
 //
 //

@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -22,9 +21,10 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
-import com.noam.kotlindev.sheetsbudget.adapters.ExpenseAdapter
+import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
+import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.expense_entry.view.*
 import org.jetbrains.anko.longToast
@@ -32,7 +32,7 @@ import org.jetbrains.anko.toast
 import java.util.*
 
 class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess,
-    ExpenseAdapter.ItemSelectedListener, SheetDeleteRow.OnDeleteListener {
+    SortedExpenseAdapter.ItemSelectedListener, SheetDeleteRow.OnDeleteListener {
 
 
 
@@ -44,8 +44,8 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     private lateinit var monthRequest: SheetRequest
     private lateinit var lastPostRequest: SheetPost
     private var accountEmail: String? = null
-    private lateinit var expenseAdapter: ExpenseAdapter
-
+    private lateinit var sortedExpenseAdapter: SortedExpenseAdapter
+    private lateinit var currentMonthExpense : MonthExpenses
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,8 +54,8 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         expense_entry_lt.checkbox.visibility = View.GONE
 
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
-        expenseAdapter = ExpenseAdapter(this, this)
-        month_expenses_rv.adapter = expenseAdapter
+        sortedExpenseAdapter = SortedExpenseAdapter(this, this)
+        month_expenses_rv.adapter = sortedExpenseAdapter
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -75,33 +75,29 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
 
         main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
         sheet = "$month/${year - 2000}"
+        currentMonthExpense = MonthExpenses(sheet)
         monthRequest = SheetRequest(mCredential, sheet, spreadsheetId, this)
 
-        getResultsFromApi(monthRequest)
+        sendRequestToApi(monthRequest)
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
                 lastPostRequest = SheetPost(mCredential, spreadsheetId, sheet, ExpenseEntry(AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
-                    desc_et.text.toString(), amount_et.text.toString(), expenseAdapter.size() + 2), this)
-                getResultsFromApi(lastPostRequest)
-                getResultsFromApi(monthRequest)
+                    desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1), this)
+                sendRequestToApi(lastPostRequest)
+                sendRequestToApi(monthRequest)
             }
         }
-
         delete_btn.setOnClickListener {
-            expenseAdapter.selectedExpensesList.forEach { expense ->
-//                val deletePost = SheetPost(mCredential, spreadsheetId, sheet,
-//                    ExpenseEntry("","","","",expense.row), this)
-//                getResultsFromApi(deletePost)
-                getResultsFromApi(SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this))
+            sortedExpenseAdapter.selectedExpensesList.forEach { expense ->
+                sendRequestToApi(SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this))
             }
-            expenseAdapter.removeSelected()
+
         }
     }
 
-
-    private fun getResultsFromApi(request: Runnable) {
+    private fun sendRequestToApi(request: Runnable) {
         if (!isGooglePlayServicesAvailable()) {
             acquireGooglePlayServices()
         } else if (mCredential.selectedAccountName == null) {
@@ -110,7 +106,6 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             toast("No network connection available.")
         } else {
             handler.post(request)
-//            handler.post()
         }
     }
     private fun isGooglePlayServicesAvailable(): Boolean {
@@ -194,9 +189,9 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
                 )
             } else {
                 if (requestCode == REQUEST_AUTHORIZATION_REQUEST || requestCode == REQUEST_ACCOUNT_PICKER)
-                    getResultsFromApi(monthRequest)
+                    sendRequestToApi(monthRequest)
                 else{
-                    getResultsFromApi(lastPostRequest)
+                    sendRequestToApi(lastPostRequest)
                 }
             }
             REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null &&
@@ -214,19 +209,25 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         }
     }
 
+    private fun showCalculatedSums(){
+        sum_edit_tv.text = "${currentMonthExpense.total}₪"
+        gal_sum_edit_tv.text = "${currentMonthExpense.galExpenses}₪"
+        noam_sum_edit_tv.text = "${currentMonthExpense.noamExpenses}₪"
+    }
 
     override fun onResultSuccess(list: List<List<String>>) {
         runOnUiThread {
-            expenseAdapter.clear()
+            sortedExpenseAdapter.clear()
+            currentMonthExpense.expenses.clear()
             list.forEach { entry ->
-                if (entry.size == 4)
-                    expenseAdapter.add(ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseAdapter.size().plus(2) ))
+                if (entry.size == 4){
+                    val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3], sortedExpenseAdapter.size().plus(1))
+                    sortedExpenseAdapter.add(expense)
+                    currentMonthExpense.addExpense(expense)
+                }
+            }
+            showCalculatedSums()
         }
-
-        }
-//        runOnUiThread {
-////            expenseAdapter.notifyDataSetChanged()
-//        }
     }
 
     override fun onResultFailed(error: Exception) {
@@ -280,12 +281,16 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         delete_btn.visibility = View.VISIBLE
     }
 
-
     override fun noItemsSelected() {
         delete_btn.visibility = View.GONE
     }
     override fun onDeleteSuccess() {
         toast("Deleted!")
+        runOnUiThread{
+            currentMonthExpense.removeAll(sortedExpenseAdapter.selectedExpensesList)
+            sortedExpenseAdapter.removeSelected()
+            showCalculatedSums()
+        }
     }
 
     override fun onDeleteFailed(error: java.lang.Exception) {

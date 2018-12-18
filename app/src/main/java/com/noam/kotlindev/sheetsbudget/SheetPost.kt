@@ -43,7 +43,7 @@ class SheetPost (credential: GoogleAccountCredential, private  val  spreadsheetI
 
     private fun getDataFromApi(): List<List<String>> {
         val content = expenseEntry.getValues()
-        val requestRange = "$sheet!A${expenseEntry.row}:" +"D${expenseEntry.row}"
+        val requestRange = "$sheet!A${expenseEntry.row.plus(1)}:" +"D${expenseEntry.row.plus(1)}"
         val requestBody = ValueRange().apply {
             range = requestRange
             majorDimension = "ROWS"
