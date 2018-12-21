@@ -21,37 +21,38 @@ class SheetRequestRunnerBuilder(context: Context, credential: GoogleAccountCrede
         val jsonFactory = JacksonFactory.getDefaultInstance()
         sheetApiService = com.google.api.services.sheets.v4.Sheets.Builder(
             transport, jsonFactory, credential
-        )
-            .setApplicationName(context.getString(app_name)).build()
+        ).setApplicationName(context.getString(app_name)).build()
     }
 
-    fun buildRequest(sheetUpdateGetRequest: SheetUpdateGetRequestInterface): SheetRequestRunner {
-        return SheetRequestRunner(sheetApiService!!, sheetUpdateGetRequest, onRequestResultListener)
+    fun buildRequest(sheetRequest: SheetRequestInterface): SheetRequestRunner {
+        return SheetRequestRunner(sheetApiService!!, sheetRequest, onRequestResultListener)
     }
 
     companion object {
         private const val TAG = "SheetRequestRunnerBuilder"
         const val UPDATE_RESULT = 1000
         const val GET_RESULT = 1001
+        const val DELETE_RESULT = 1002
     }
 
     interface OnRequestResultListener{
-        fun onRequestSuccess(list: List<List<String>>, resultCode : Int)
+        fun onRequestSuccess(list: List<List<String>>?, resultCode : Int)
         fun onRequestFailed(error: java.lang.Exception)
     }
 
-    class SheetRequestRunner( private val sheetApiService: com.google.api.services.sheets.v4.Sheets,
-                              private val sheetUpdateGetRequest: SheetUpdateGetRequestInterface,
-                              private val onRequestResultListener: OnRequestResultListener):Runnable{
+    class SheetRequestRunner(private val sheetApiService: com.google.api.services.sheets.v4.Sheets,
+                             private val sheetRequest: SheetRequestInterface,
+                             private val onRequestResultListener: OnRequestResultListener):Runnable{
         override fun run() {
             Log.d(TAG, "Executing sheet request.")
-            val resultCode = if (sheetUpdateGetRequest is SheetGetRequest)
-                GET_RESULT
-            else
-                UPDATE_RESULT
-
+            val resultCode = when(sheetRequest) {
+                is SheetGetRequest -> GET_RESULT
+                is SheetUpdateRequest -> UPDATE_RESULT
+                is SheetDeleteRangeRequest -> DELETE_RESULT
+                else -> -1
+            }
             try {
-                onRequestResultListener.onRequestSuccess(sheetUpdateGetRequest.executeRequest(sheetApiService),
+                onRequestResultListener.onRequestSuccess(sheetRequest.executeRequest(sheetApiService),
                     resultCode)
             }catch (googleJsonResponseException: GoogleJsonResponseException){
                 Log.e(TAG, googleJsonResponseException.message)

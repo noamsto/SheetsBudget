@@ -23,8 +23,10 @@ import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetDeleteRangeRequest
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestExecutor
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.DELETE_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.GET_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.UPDATE_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetUpdateRequest
@@ -36,9 +38,7 @@ import org.jetbrains.anko.toast
 import java.util.*
 
 class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestResultListener,
-    SortedExpenseAdapter.ItemSelectedListener, SheetDeleteRow.OnDeleteListener {
-
-
+    SortedExpenseAdapter.ItemSelectedListener {
 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
     private lateinit var sheet : String
@@ -80,25 +80,25 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         monthRequest = SheetGetRequest(sheet, spreadsheetId)
 
         sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
-
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
                 lastUpdateRequest = SheetUpdateRequest(spreadsheetId, sheet, ExpenseEntry(
-                        AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
-                        desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1)
+                    AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
+                    desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1)
                 )
                 sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(lastUpdateRequest))
                 sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
             }
         }
         delete_btn.setOnClickListener {
+            val rows =  ArrayList<Int>()
             sortedExpenseAdapter.selectedExpensesList.forEach { expense ->
-                val sheetDeleteRequest = SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this)
-                sendRequestToApi(sheetDeleteRequest)
+                rows.add(expense.row)
             }
-
+            val sheetDeleteRangeRequest = SheetDeleteRangeRequest(sheet, spreadsheetId, rows)
+            sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(sheetDeleteRangeRequest))
         }
     }
 
@@ -113,6 +113,7 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
             sheetRequestExecutor.postRequest(request)
         }
     }
+
     private fun isGooglePlayServicesAvailable(): Boolean {
         val apiAvailability = GoogleApiAvailability.getInstance()
         val connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this)
@@ -132,6 +133,7 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
                 REQUEST_ACCOUNT_PICKER)
         }
     }
+
     /**
      * Attempt to resolve a missing, out-of-date, invalid or disabled Google
      * Play Services installation via a user dialog, if possible.
@@ -150,9 +152,7 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
      * @param connectionStatusCode code describing the presence (or lack of)
      * Google Play Services on this device.
      */
-    private fun showGooglePlayServicesAvailabilityErrorDialog(
-        connectionStatusCode: Int
-    ) {
+    private fun showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode: Int) {
         val apiAvailability = GoogleApiAvailability.getInstance()
         val dialog = apiAvailability.getErrorDialog(
             this@MainActivity,
@@ -182,9 +182,7 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
      * @param data Intent (containing result data) returned by incoming
      * activity result.
      */
-    override fun onActivityResult(
-        requestCode: Int, resultCode: Int, data: Intent?
-    ) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             REQUEST_GOOGLE_PLAY_SERVICES -> if (resultCode != Activity.RESULT_OK) {
@@ -220,13 +218,13 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         noam_sum_edit_tv.text = "${currentMonthExpense.noamExpenses}₪"
     }
 
-    override fun onRequestSuccess(list: List<List<String>>, resultCode: Int) {
+    override fun onRequestSuccess(list: List<List<String>>?, resultCode: Int) {
         runOnUiThread {
-            currentMonthExpense.expenses.clear()
             when(resultCode){
                 GET_RESULT -> {
+                    currentMonthExpense.expenses.clear()
                     sortedExpenseAdapter.clear()
-                    list.forEach { entry ->
+                    list!!.forEach { entry ->
                         if (entry.size == 4){
                             val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3], sortedExpenseAdapter.size().plus(1))
                             sortedExpenseAdapter.add(expense)
@@ -235,10 +233,18 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
                     }
                 }
                 UPDATE_RESULT ->{
-                    list.forEach { entry ->
-                    sortedExpenseAdapter.add(ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
-                        sortedExpenseAdapter.size().plus(1)))
+                    list!!.forEach { entry ->
+                        sortedExpenseAdapter.add(ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
+                            sortedExpenseAdapter.size().plus(1)))
                     }
+                    desc_et.setText("")
+                    amount_et.setText("")
+                }
+                DELETE_RESULT -> {
+                    toast("Delete range succeeded.")
+                    currentMonthExpense.removeAll(sortedExpenseAdapter.selectedExpensesList)
+                    sortedExpenseAdapter.removeSelected()
+                    delete_btn.visibility = View.GONE
                 }
             }
             showCalculatedSums()
@@ -261,27 +267,12 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         }
     }
 
-    override fun onItemsSelected()
-    {
+    override fun onItemsSelected(){
         delete_btn.visibility = View.VISIBLE
     }
 
     override fun noItemsSelected() {
         delete_btn.visibility = View.GONE
-    }
-    override fun onDeleteSuccess() {
-        toast("Deleted!")
-        runOnUiThread{
-            currentMonthExpense.removeAll(sortedExpenseAdapter.selectedExpensesList)
-            sortedExpenseAdapter.removeSelected()
-            showCalculatedSums()
-            delete_btn.visibility = View.GONE
-        }
-    }
-
-    override fun onDeleteFailed(error: java.lang.Exception) {
-        Log.e(TAG, error.message)
-        toast(error.message.toString())
     }
 
     companion object {

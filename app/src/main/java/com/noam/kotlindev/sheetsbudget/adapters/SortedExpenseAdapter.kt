@@ -61,21 +61,29 @@ class SortedExpenseAdapter(private val context: Context, private val itemSelecte
             Color.rgb(AccountColor.NOAM_COLOR.red, AccountColor.NOAM_COLOR.green, AccountColor.NOAM_COLOR.blue)
         }
         expenseVH.itemView.setBackgroundColor(color)
-        expenseVH.checkBox.setOnCheckedChangeListener { _, isChecked ->
-                if(isChecked){
-                    itemSelectedListener.onItemsSelected()
-                    expenseVH.expenseView.alpha = 0.7F
+        expenseVH.checkBox.apply {
+            setOnClickListener {
+                val checkbox = it as CheckBox
+                if (checkbox.isChecked){
                     if (!selectedExpensesList.contains(expenseEntry))
                         selectedExpensesList.add(expenseEntry)
-                }
-                else{
+                }else{
                     selectedExpensesList.remove(expenseEntry)
                     if (selectedExpensesList.isEmpty()){
                         itemSelectedListener.noItemsSelected()
                     }
-                    expenseVH.expenseView.alpha = 1F
                 }
             }
+            setOnCheckedChangeListener { _, isChecked ->
+                if(isChecked){
+                    itemSelectedListener.onItemsSelected()
+                    expenseVH.expenseView.alpha = 0.7F
+                }
+                else
+                    expenseVH.expenseView.alpha = 1F
+
+            }
+        }
         expenseVH.checkBox.isChecked = selectedExpensesList.contains(expenseEntry)
     }
 

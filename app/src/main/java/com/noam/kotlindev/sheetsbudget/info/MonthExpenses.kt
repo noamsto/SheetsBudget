@@ -14,6 +14,10 @@ class MonthExpenses(month: String){
 
     fun removeExpense(expenseEntry: ExpenseEntry){
         expenses.remove(expenseEntry)
+        calcAllExpenses()
+    }
+
+    private fun calcAllExpenses(){
         calcDiffExpenses()
         calcTotal()
     }
@@ -31,13 +35,10 @@ class MonthExpenses(month: String){
 
     private fun calcTotal() {
         total = galExpenses + noamExpenses
-
     }
 
     fun removeAll(expensesToRemove: ArrayList<ExpenseEntry>) {
         expenses.removeAll(expensesToRemove)
-        calcDiffExpenses()
-        calcTotal()
+        calcAllExpenses()
     }
-
 }
