@@ -1,24 +1,32 @@
 #+TITLE: SheetsBudget Planning
-#+SETUPFILE: ~/git/org-html-themes/setup/theme-bigblow.setup
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/setup/theme-bigblow.setup
 
 #+AUTHOR: Noam Stolero [[mailto:][stellern@gmail.com]]
 * First Steps:
+** TODO [#A] Reformat the Code:
+*** DONE Use [[https://github.com/QuickPermissions/QuickPermissions-Kotlin][QuickPermissions]]
+    CLOSED: [2018-12-21 Fri 23:05]
+*** TODO Create modules: 
+**** DONE Request interface.
+     CLOSED: [2018-12-21 Fri 23:07]
+**** TODO Create module for handling choose account and other permissions.
+     1) Activity
 ** DONE Access Gal and Noam budget sheet.
    CLOSED: [2018-12-03 Mon 22:44]
-** TODO [#A] Reformat the Code:
-*** TODO Use [[https://github.com/QuickPermissions/QuickPermissions-Kotlin][QuickPermissions]]
-*** TODO Create modules:
-    1. Get/Set 
-    2. Activity
- 
 * Required functions:
-** TODO [#A] List all entries.
-** TODO [#B] Create a new sheet.
-** TODO [#C] Add new entry for Gal or Noam
-   * Date
-   * Description
-   * Amount
+** DONE [#A] List all entries.
+   CLOSED: [2018-12-21 Fri 23:08]
+** TODO [#A] Create a new sheet.
 ** TODO Show summary, (make sure its synced with sheet.)
+*** DONE Show summary
+    CLOSED: [2018-12-21 Fri 23:08]
+*** Sync summary with sheets. 
+** DONE [#C] Add new entry for Gal or Noam
+   CLOSED: [2018-12-21 Fri 23:08]
+   * Date
+   * Description 
+   * Amount
 * User Interface:
-** TODO Create monthly views.
-** TODO Scroll between months.
+** TODO [#A] Use saved instance, on device cache.
+** TODO [#C] Create monthly views.
+** TODO [#C] Scroll between months.
