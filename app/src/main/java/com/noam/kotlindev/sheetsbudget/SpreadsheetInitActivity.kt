@@ -20,7 +20,7 @@
 //import com.google.api.client.util.ExponentialBackOff
 //import com.google.api.services.sheets.v4.SheetsScopes
 //import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
-//import com.noam.kotlindev.sheetsbudget.SheetRequest.OnRequestResultListener
+//import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetGetRequest.OnRequestResultListener
 //import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 //import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 //import kotlinx.android.synthetic.main.activity_spreadsheet_init.*
@@ -28,7 +28,7 @@
 //import org.jetbrains.anko.toast
 //import java.util.*
 //
-//class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, SheetPost.OnPostSuccess {
+//class SpreadsheetInitActivity : AppCompatActivity(), OnRequestResultListener, SheetUpdateRequest.OnPostSuccess {
 //
 //
 //    private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
@@ -86,8 +86,8 @@
 //        } else if (!isDeviceOnline()) {
 //            toast("No network connection available.")
 //        } else {
-//            handler.post(SheetRequest(mCredential, range, spreadsheetId, this))
-////            handler.post(SheetPost(mCredential, range, spreadsheetId, "", this))
+//            handler.post(SheetGetRequest(mCredential, range, spreadsheetId, this))
+////            handler.post(SheetUpdateRequest(mCredential, range, spreadsheetId, "", this))
 //        }
 //    }
 //    private fun isGooglePlayServicesAvailable(): Boolean {
@@ -189,7 +189,7 @@
 //    }
 //
 //
-//    override fun onResultSuccess(list: List<List<String>>) {
+//    override fun onRequestSuccess(list: List<List<String>>) {
 //        expenseEntries.clear()
 //        list.forEach { entry ->
 //            expenseEntries.add(0, ExpenseEntry(entry[0], entry[1], entry[2], entry[3], expenseEntries.size.plus(3)))
@@ -199,7 +199,7 @@
 //        }
 //    }
 //
-//    override fun onResultFailed(error: Exception) {
+//    override fun onRequestSuccess(error: Exception) {
 //        when(error.javaClass){
 //            UserRecoverableAuthIOException::class.java -> {
 //                startActivityForResult(

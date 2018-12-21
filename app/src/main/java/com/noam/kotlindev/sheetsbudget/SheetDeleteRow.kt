@@ -22,8 +22,7 @@ class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreads
         mService = com.google.api.services.sheets.v4.Sheets.Builder(
             transport, jsonFactory, credential
         )
-            .setApplicationName("SheetBudget")
-            .build()
+            .setApplicationName("SheetBudget").build()
     }
 
     override fun run() {
@@ -42,15 +41,12 @@ class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreads
     }
 
     private fun deleteRow(){
-
-
         val requestSheetID = mService!!.spreadsheets().get(spreadsheetId)
         requestSheetID.apply {
             ranges = (mutableListOf(sheet))
         }
         val responseSheetID = requestSheetID.execute()
         val sheetId: Int = responseSheetID.sheets[0].properties.sheetId
-
 
         val gridRange = GridRange().apply {
             this.sheetId = sheetId
@@ -66,10 +62,13 @@ class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreads
         }
         val deleteRowRequest = Request().setDeleteRange(deleteRangeRequest)
 
-        val batchUpdateSpreadsheetRequest = BatchUpdateSpreadsheetRequest()
-            .setRequests(mutableListOf(deleteRowRequest))
-        this.mService!!.spreadsheets().batchUpdate(spreadsheetId,
+        val batchUpdateSpreadsheetRequest = BatchUpdateSpreadsheetRequest().apply {
+            requests = mutableListOf(deleteRowRequest)
+            responseIncludeGridData = true
+        }
+        val response = this.mService!!.spreadsheets().batchUpdate(spreadsheetId,
             batchUpdateSpreadsheetRequest).execute()
+
     }
 
     interface OnDeleteListener{
@@ -78,6 +77,6 @@ class SheetDeleteRow (credential: GoogleAccountCredential, private  val  spreads
     }
 
     companion object {
-        const val TAG = "SheetRequest"
+        const val TAG = "SheetGetRequest"
     }
 }

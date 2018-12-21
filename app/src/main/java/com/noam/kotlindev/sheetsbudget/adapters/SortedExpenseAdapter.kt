@@ -61,20 +61,22 @@ class SortedExpenseAdapter(private val context: Context, private val itemSelecte
             Color.rgb(AccountColor.NOAM_COLOR.red, AccountColor.NOAM_COLOR.green, AccountColor.NOAM_COLOR.blue)
         }
         expenseVH.itemView.setBackgroundColor(color)
-        expenseVH.checkBox.setOnClickListener { it ->
-            val checkBox = it as CheckBox
-            if (checkBox.isChecked){
-                selectedExpensesList.add(expenseEntry)
-                expenseVH.expenseView.alpha = 0.7F
-                itemSelectedListener.onItemsSelected()
-            }else{
-                selectedExpensesList.remove(expenseEntry)
-                expenseVH.expenseView.alpha = 1F
-                if (selectedExpensesList.isEmpty())
-                    itemSelectedListener.noItemsSelected()
+        expenseVH.checkBox.setOnCheckedChangeListener { _, isChecked ->
+                if(isChecked){
+                    itemSelectedListener.onItemsSelected()
+                    expenseVH.expenseView.alpha = 0.7F
+                    if (!selectedExpensesList.contains(expenseEntry))
+                        selectedExpensesList.add(expenseEntry)
+                }
+                else{
+                    selectedExpensesList.remove(expenseEntry)
+                    if (selectedExpensesList.isEmpty()){
+                        itemSelectedListener.noItemsSelected()
+                    }
+                    expenseVH.expenseView.alpha = 1F
+                }
             }
-        }
-
+        expenseVH.checkBox.isChecked = selectedExpensesList.contains(expenseEntry)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExpenseViewHolder {

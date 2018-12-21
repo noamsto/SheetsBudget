@@ -7,8 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
@@ -25,13 +23,19 @@ import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestExecutor
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.GET_RESULT
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.UPDATE_RESULT
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetUpdateRequest
+import com.noam.kotlindev.sheetsbudget.sheetsAPIrequestsHandlerThread.SheetGetRequest
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.expense_entry.view.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.util.*
 
-class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, SheetPost.OnPostSuccess,
+class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestResultListener,
     SortedExpenseAdapter.ItemSelectedListener, SheetDeleteRow.OnDeleteListener {
 
 
@@ -39,10 +43,10 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
     private lateinit var sheet : String
     private lateinit var mCredential: GoogleAccountCredential
-    private lateinit var mHandlerThread: HandlerThread
-    private lateinit var handler: Handler
-    private lateinit var monthRequest: SheetRequest
-    private lateinit var lastPostRequest: SheetPost
+    private val sheetRequestExecutor = SheetRequestExecutor()
+    private lateinit var sheetRequestRunnerBuilder: SheetRequestRunnerBuilder
+    private lateinit var monthRequest: SheetGetRequest
+    private lateinit var lastUpdateRequest: SheetUpdateRequest
     private var accountEmail: String? = null
     private lateinit var sortedExpenseAdapter: SortedExpenseAdapter
     private lateinit var currentMonthExpense : MonthExpenses
@@ -52,7 +56,6 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         setContentView(R.layout.activity_main)
 
         expense_entry_lt.checkbox.visibility = View.GONE
-
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
         sortedExpenseAdapter = SortedExpenseAdapter(this, this)
         month_expenses_rv.adapter = sortedExpenseAdapter
@@ -62,11 +65,9 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
             applicationContext, Arrays.asList(*SCOPES))
             .setBackOff(ExponentialBackOff())
 
-        mHandlerThread = HandlerThread("SheetsRequests")
-        mHandlerThread.start()
-        handler = Handler(mHandlerThread.looper)
-
         chooseAccount()
+
+        sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, mCredential, this)
 
         val calender = Calendar.getInstance()
         val day = calender.get(Calendar.DAY_OF_MONTH)
@@ -76,22 +77,26 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
         sheet = "$month/${year - 2000}"
         currentMonthExpense = MonthExpenses(sheet)
-        monthRequest = SheetRequest(mCredential, sheet, spreadsheetId, this)
+        monthRequest = SheetGetRequest(sheet, spreadsheetId)
 
-        sendRequestToApi(monthRequest)
+        sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
+
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
-                lastPostRequest = SheetPost(mCredential, spreadsheetId, sheet, ExpenseEntry(AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
-                    desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1), this)
-                sendRequestToApi(lastPostRequest)
-                sendRequestToApi(monthRequest)
+                lastUpdateRequest = SheetUpdateRequest(spreadsheetId, sheet, ExpenseEntry(
+                        AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
+                        desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1)
+                )
+                sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(lastUpdateRequest))
+                sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
             }
         }
         delete_btn.setOnClickListener {
             sortedExpenseAdapter.selectedExpensesList.forEach { expense ->
-                sendRequestToApi(SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this))
+                val sheetDeleteRequest = SheetDeleteRow(mCredential, spreadsheetId, sheet,expense.row, this)
+                sendRequestToApi(sheetDeleteRequest)
             }
 
         }
@@ -105,7 +110,7 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         } else if (!isDeviceOnline()) {
             toast("No network connection available.")
         } else {
-            handler.post(request)
+            sheetRequestExecutor.postRequest(request)
         }
     }
     private fun isGooglePlayServicesAvailable(): Boolean {
@@ -189,9 +194,9 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
                 )
             } else {
                 if (requestCode == REQUEST_AUTHORIZATION_REQUEST || requestCode == REQUEST_ACCOUNT_PICKER)
-                    sendRequestToApi(monthRequest)
+                    sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
                 else{
-                    sendRequestToApi(lastPostRequest)
+                    sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(lastUpdateRequest))
                 }
             }
             REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null &&
@@ -215,22 +220,32 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         noam_sum_edit_tv.text = "${currentMonthExpense.noamExpenses}₪"
     }
 
-    override fun onResultSuccess(list: List<List<String>>) {
+    override fun onRequestSuccess(list: List<List<String>>, resultCode: Int) {
         runOnUiThread {
-            sortedExpenseAdapter.clear()
             currentMonthExpense.expenses.clear()
-            list.forEach { entry ->
-                if (entry.size == 4){
-                    val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3], sortedExpenseAdapter.size().plus(1))
-                    sortedExpenseAdapter.add(expense)
-                    currentMonthExpense.addExpense(expense)
+            when(resultCode){
+                GET_RESULT -> {
+                    sortedExpenseAdapter.clear()
+                    list.forEach { entry ->
+                        if (entry.size == 4){
+                            val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3], sortedExpenseAdapter.size().plus(1))
+                            sortedExpenseAdapter.add(expense)
+                            currentMonthExpense.addExpense(expense)
+                        }
+                    }
+                }
+                UPDATE_RESULT ->{
+                    list.forEach { entry ->
+                    sortedExpenseAdapter.add(ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
+                        sortedExpenseAdapter.size().plus(1)))
+                    }
                 }
             }
             showCalculatedSums()
         }
     }
 
-    override fun onResultFailed(error: Exception) {
+    override fun onRequestFailed(error: Exception) {
         when(error.javaClass){
             UserRecoverableAuthIOException::class.java -> {
                 startActivityForResult(
@@ -244,40 +259,6 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
                 longToast(error.message!!)
             }
         }
-    }
-    override fun onPostSuccess(list: List<List<String>>) {
-        Log.d(TAG, list.toString())
-        longToast("Success!")
-        runOnUiThread {
-            desc_et.setText("")
-            amount_et.setText("")
-        }
-    }
-
-    override fun onPostFailed(error: Exception) {
-        when(error.javaClass){
-            UserRecoverableAuthIOException::class.java -> {
-                startActivityForResult(
-                    (error as UserRecoverableAuthIOException).intent, REQUEST_AUTHORIZATION_POST
-                )
-            }
-            GoogleJsonResponseException::class.java -> {
-                longToast((error as GoogleJsonResponseException).details.message)
-            }
-            else ->{
-                longToast(error.message!!)
-            }
-        }
-    }
-
-    companion object {
-        private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS)
-        internal const val REQUEST_ACCOUNT_PICKER = 1000
-        internal const val REQUEST_AUTHORIZATION_REQUEST = 1001
-        internal const val REQUEST_AUTHORIZATION_POST = 1002
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1003
-        private const val PREF_ACCOUNT_NAME = "accountName"
-        private const val TAG = "MainActivity"
     }
 
     override fun onItemsSelected()
@@ -302,4 +283,15 @@ class MainActivity : AppCompatActivity(), SheetRequest.OnRequestResultListener, 
         Log.e(TAG, error.message)
         toast(error.message.toString())
     }
+
+    companion object {
+        private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS)
+        internal const val REQUEST_ACCOUNT_PICKER = 1000
+        internal const val REQUEST_AUTHORIZATION_REQUEST = 1001
+        internal const val REQUEST_AUTHORIZATION_POST = 1002
+        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1003
+        private const val PREF_ACCOUNT_NAME = "accountName"
+        private const val TAG = "MainActivity"
+    }
+
 }
