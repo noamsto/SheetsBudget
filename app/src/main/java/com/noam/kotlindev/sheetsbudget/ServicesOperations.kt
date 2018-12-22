@@ -1,5 +1,6 @@
 package com.noam.kotlindev.sheetsbudget
 
+
 import android.Manifest
 import android.accounts.AccountManager
 import android.app.Activity
@@ -132,4 +133,5 @@ class ServicesOperations(private val activity: Activity) {
         private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "ServicesOperations"
     }
+
 }
