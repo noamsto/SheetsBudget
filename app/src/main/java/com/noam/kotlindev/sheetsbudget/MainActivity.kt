@@ -1,34 +1,25 @@
 package com.noam.kotlindev.sheetsbudget
 
-import android.Manifest
-import android.accounts.AccountManager
-import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.View
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
-import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
-import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetDeleteRangeRequest
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestExecutor
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestHandler
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.DELETE_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.GET_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.UPDATE_RESULT
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.SheetRequestRunner
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetUpdateRequest
 import com.noam.kotlindev.sheetsbudget.sheetsAPIrequestsHandlerThread.SheetGetRequest
 import kotlinx.android.synthetic.main.activity_main.*
@@ -42,14 +33,15 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
 
     private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
     private lateinit var sheet : String
-    private lateinit var mCredential: GoogleAccountCredential
-    private val sheetRequestExecutor = SheetRequestExecutor()
+    private lateinit var accountCredential: GoogleAccountCredential
+    private val sheetRequestExecutor = SheetRequestHandler()
     private lateinit var sheetRequestRunnerBuilder: SheetRequestRunnerBuilder
     private lateinit var monthRequest: SheetGetRequest
     private lateinit var lastUpdateRequest: SheetUpdateRequest
     private var accountEmail: String? = null
     private lateinit var sortedExpenseAdapter: SortedExpenseAdapter
     private lateinit var currentMonthExpense : MonthExpenses
+    private lateinit var servicesOperations: ServicesOperations
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,14 +52,11 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         sortedExpenseAdapter = SortedExpenseAdapter(this, this)
         month_expenses_rv.adapter = sortedExpenseAdapter
 
-        // Initialize credentials and service object.
-        mCredential = GoogleAccountCredential.usingOAuth2(
-            applicationContext, Arrays.asList(*SCOPES))
-            .setBackOff(ExponentialBackOff())
+        servicesOperations = ServicesOperations(this)
+        accountCredential = servicesOperations.accountCredential
+        accountEmail = servicesOperations.getAccountEmail()
 
-        chooseAccount()
-
-        sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, mCredential, this)
+        sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, accountCredential, this)
 
         val calender = Calendar.getInstance()
         val day = calender.get(Calendar.DAY_OF_MONTH)
@@ -102,114 +91,15 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         }
     }
 
-    private fun sendRequestToApi(request: Runnable) {
-        if (!isGooglePlayServicesAvailable()) {
-            acquireGooglePlayServices()
-        } else if (mCredential.selectedAccountName == null) {
-            chooseAccount()
-        } else if (!isDeviceOnline()) {
-            toast("No network connection available.")
-        } else {
+    private fun sendRequestToApi(request: SheetRequestRunner) {
+        if (servicesOperations.sheetApiInteractionPrerequisite())
             sheetRequestExecutor.postRequest(request)
-        }
     }
 
-    private fun isGooglePlayServicesAvailable(): Boolean {
-        val apiAvailability = GoogleApiAvailability.getInstance()
-        val connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this)
-        return connectionStatusCode == ConnectionResult.SUCCESS
-    }
 
-    private fun chooseAccount() = runWithPermissions(Manifest.permission.GET_ACCOUNTS){
-        val accountName = getPreferences(Context.MODE_PRIVATE)
-            .getString(PREF_ACCOUNT_NAME, null)
-        if (accountName != null) {
-            mCredential.selectedAccountName = accountName
-            accountEmail = accountName
-        } else {
-            // Start a dialog from which the user can choose an account
-            startActivityForResult(
-                mCredential.newChooseAccountIntent(),
-                REQUEST_ACCOUNT_PICKER)
-        }
-    }
-
-    /**
-     * Attempt to resolve a missing, out-of-date, invalid or disabled Google
-     * Play Services installation via a user dialog, if possible.
-     */
-    private fun acquireGooglePlayServices() {
-        val apiAvailability = GoogleApiAvailability.getInstance()
-        val connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this)
-        if (apiAvailability.isUserResolvableError(connectionStatusCode)) {
-            showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode)
-        }
-    }
-
-    /**
-     * Display an error dialog showing that Google Play Services is missing
-     * or out of date.
-     * @param connectionStatusCode code describing the presence (or lack of)
-     * Google Play Services on this device.
-     */
-    private fun showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode: Int) {
-        val apiAvailability = GoogleApiAvailability.getInstance()
-        val dialog = apiAvailability.getErrorDialog(
-            this@MainActivity,
-            connectionStatusCode,
-            REQUEST_GOOGLE_PLAY_SERVICES
-        )
-        dialog.show()
-    }
-
-    /**
-     * Checks whether the device currently has a network connection.
-     * @return true if the device has a network connection, false otherwise.
-     */
-    private fun isDeviceOnline(): Boolean {
-        val connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connMgr.activeNetworkInfo
-        return networkInfo != null && networkInfo.isConnected
-    }
-
-    /**
-     * Called when an activity launched here (specifically, AccountPicker
-     * and authorization) exits, giving you the requestCode you started it with,
-     * the resultCode it returned, and any additional data from it.
-     * @param requestCode code indicating which activity result is incoming.
-     * @param resultCode code indicating the result of the incoming
-     * activity result.
-     * @param data Intent (containing result data) returned by incoming
-     * activity result.
-     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_GOOGLE_PLAY_SERVICES -> if (resultCode != Activity.RESULT_OK) {
-                Log.e(
-                    TAG,
-                    "This app requires Google Play Services. Please install " + "Google Play Services on your device and relaunch this app."
-                )
-            } else {
-                if (requestCode == REQUEST_AUTHORIZATION_REQUEST || requestCode == REQUEST_ACCOUNT_PICKER)
-                    sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
-                else{
-                    sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(lastUpdateRequest))
-                }
-            }
-            REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null &&
-                data.extras != null
-            ) {
-                accountEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-                if (accountEmail != null) {
-                    val settings = getPreferences(Context.MODE_PRIVATE)
-                    val editor = settings.edit()
-                    editor.putString(PREF_ACCOUNT_NAME, accountEmail)
-                    editor.apply()
-                    mCredential.selectedAccountName = accountEmail
-                }
-            }
-        }
+        servicesOperations.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun showCalculatedSums(){
@@ -276,12 +166,8 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
     }
 
     companion object {
-        private val SCOPES = arrayOf(SheetsScopes.SPREADSHEETS)
-        internal const val REQUEST_ACCOUNT_PICKER = 1000
         internal const val REQUEST_AUTHORIZATION_REQUEST = 1001
         internal const val REQUEST_AUTHORIZATION_POST = 1002
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1003
-        private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "MainActivity"
     }
 
