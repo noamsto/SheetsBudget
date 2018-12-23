@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
     private var accountEmail: String? = null
     private lateinit var sortedExpenseAdapter: SortedExpenseAdapter
     private lateinit var currentMonthExpense : MonthExpenses
-    private lateinit var servicesOperations: ServicesOperations
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,9 +60,6 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
 
         sortedExpenseAdapter.addall(currentMonthExpense.expenses)
 
-        servicesOperations = ServicesOperations(this)
-        accountCredential = servicesOperations.accountCredential
-
         sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, accountCredential, this)
 
         val calender = Calendar.getInstance()
@@ -73,9 +69,8 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
 
         main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
         sheet = "$month/${year - 2000}"
-        currentMonthExpense = MonthExpenses(sheet)
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
-
+        showCalculatedSums()
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()

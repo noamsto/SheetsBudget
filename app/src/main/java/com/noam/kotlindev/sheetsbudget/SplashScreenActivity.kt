@@ -104,7 +104,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
                     sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
                 }else{
                     alert ("Account must be chosen for this app to work, Do you want to try again?") {
-                        yesButton { acquireGooglePlayServices() }
+                        yesButton { chooseAccount() }
                         noButton { finish() }
                     }.show()
                 }

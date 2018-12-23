@@ -10,8 +10,7 @@ class MonthExpenses(month: String): Serializable{
 
     fun addExpense(expenseEntry: ExpenseEntry){
         expenses.add(expenseEntry)
-        calcDiffExpenses()
-        calcTotal()
+        calcAllExpenses()
     }
 
     fun removeExpense(expenseEntry: ExpenseEntry){
