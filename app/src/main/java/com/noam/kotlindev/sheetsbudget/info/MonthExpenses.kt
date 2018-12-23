@@ -1,6 +1,8 @@
 package com.noam.kotlindev.sheetsbudget.info
 
-class MonthExpenses(month: String){
+import java.io.Serializable
+
+class MonthExpenses(month: String): Serializable{
     val expenses: ArrayList<ExpenseEntry> = ArrayList()
     var total = 0
     var galExpenses = 0

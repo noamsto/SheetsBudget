@@ -17,4 +17,8 @@
         <item name="android:layout_height">17dp</item>
         <item name="android:background">?android:attr/listDivider</item>
     </style>
+    <!--Style for Splash Screen-->
+    <style name="SplashScreenTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name ="android:windowBackground"> @drawable/splash_screen_background</item>
+    </style>
 </resources>

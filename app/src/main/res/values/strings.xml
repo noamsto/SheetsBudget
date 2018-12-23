@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Sheets Budget</string>
+    <string-array name="splashScreenText">
+        <item>Hello</item>
+        <item>Getting Ready</item>
+        <item>:)</item>
+    </string-array>
 </resources>

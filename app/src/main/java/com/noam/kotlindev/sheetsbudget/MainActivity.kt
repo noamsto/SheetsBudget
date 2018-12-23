@@ -1,6 +1,5 @@
 package com.noam.kotlindev.sheetsbudget
 
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
@@ -8,8 +7,12 @@ import android.view.View
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
+import com.noam.kotlindev.sheetsbudget.SplashScreenActivity.Companion.ACCOUNT_EMAIL_TAG
+import com.noam.kotlindev.sheetsbudget.SplashScreenActivity.Companion.MONTH_EXPENSE_TAG
 import com.noam.kotlindev.sheetsbudget.adapters.SortedExpenseAdapter
+import com.noam.kotlindev.sheetsbudget.constants.SpreadSheetInfo
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
@@ -31,10 +34,9 @@ import java.util.*
 class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestResultListener,
     SortedExpenseAdapter.ItemSelectedListener {
 
-    private val spreadsheetId = "1Q3VO5VLAIKi2uyhc7HIH-AOOt5FRujTRkh6D8QJ5IYE"
     private lateinit var sheet : String
     private lateinit var accountCredential: GoogleAccountCredential
-    private val sheetRequestExecutor = SheetRequestHandler()
+    private val sheetRequestHandler = SheetRequestHandler()
     private lateinit var sheetRequestRunnerBuilder: SheetRequestRunnerBuilder
     private lateinit var monthRequest: SheetGetRequest
     private lateinit var lastUpdateRequest: SheetUpdateRequest
@@ -47,14 +49,20 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        accountEmail = intent.getStringExtra(ACCOUNT_EMAIL_TAG)
+        currentMonthExpense = intent.getSerializableExtra(MONTH_EXPENSE_TAG) as MonthExpenses
+        accountCredential =  GoogleAccountCredential.usingOAuth2(
+            applicationContext, Arrays.asList(*SpreadSheetInfo.SCOPES)).setBackOff(ExponentialBackOff())!!
+
         expense_entry_lt.checkbox.visibility = View.GONE
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
         sortedExpenseAdapter = SortedExpenseAdapter(this, this)
         month_expenses_rv.adapter = sortedExpenseAdapter
 
+        sortedExpenseAdapter.addall(currentMonthExpense.expenses)
+
         servicesOperations = ServicesOperations(this)
         accountCredential = servicesOperations.accountCredential
-        accountEmail = servicesOperations.getAccountEmail()
 
         sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, accountCredential, this)
 
@@ -66,14 +74,13 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         main_date_tv.text = "${day.toString().padStart(2, '0')}/$month/${year.toString().removeRange(0,2)}"
         sheet = "$month/${year - 2000}"
         currentMonthExpense = MonthExpenses(sheet)
-        monthRequest = SheetGetRequest(sheet, spreadsheetId)
+        monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
 
-        sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()
             if (desc.isNotBlank() && amount.isNotBlank() ){
-                lastUpdateRequest = SheetUpdateRequest(spreadsheetId, sheet, ExpenseEntry(
+                lastUpdateRequest = SheetUpdateRequest(SpreadSheetInfo.ID, sheet, ExpenseEntry(
                     AccountInfo.getNameByEmail(accountEmail!!), main_date_tv.text.toString(),
                     desc_et.text.toString(), amount_et.text.toString(), sortedExpenseAdapter.size() + 1)
                 )
@@ -86,20 +93,13 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
             sortedExpenseAdapter.selectedExpensesList.forEach { expense ->
                 rows.add(expense.row)
             }
-            val sheetDeleteRangeRequest = SheetDeleteRangeRequest(sheet, spreadsheetId, rows)
+            val sheetDeleteRangeRequest = SheetDeleteRangeRequest(sheet, SpreadSheetInfo.ID, rows)
             sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(sheetDeleteRangeRequest))
         }
     }
 
     private fun sendRequestToApi(request: SheetRequestRunner) {
-        if (servicesOperations.sheetApiInteractionPrerequisite())
-            sheetRequestExecutor.postRequest(request)
-    }
-
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        servicesOperations.onActivityResult(requestCode, resultCode, data)
+        sheetRequestHandler.postRequest(request)
     }
 
     private fun showCalculatedSums(){
@@ -143,11 +143,6 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
 
     override fun onRequestFailed(error: Exception) {
         when(error.javaClass){
-            UserRecoverableAuthIOException::class.java -> {
-                startActivityForResult(
-                    (error as UserRecoverableAuthIOException).intent, REQUEST_AUTHORIZATION_REQUEST
-                )
-            }
             GoogleJsonResponseException::class.java -> {
                 longToast((error as GoogleJsonResponseException).details.message)
             }
