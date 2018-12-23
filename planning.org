@@ -4,23 +4,23 @@
 #+AUTHOR: Noam Stolero [[mailto:][stellern@gmail.com]]
 * First Steps:
 ** TODO [#A] Reformat the Code:
-*** DONE Use [[https://github.com/QuickPermissions/QuickPermissions-Kotlin][QuickPermissions]]
-    CLOSED: [2018-12-21 Fri 23:05]
 *** TODO Create modules: 
 **** DONE Request interface.
      CLOSED: [2018-12-21 Fri 23:07]
-**** TODO Create module for handling choose account and other permissions.
-     1) Activity
+*** TODO Create module for handling choose account and other permissions.
+    1) Activity
+*** DONE Use [[https://github.com/QuickPermissions/QuickPermissions-Kotlin][QuickPermissions]]
+    CLOSED: [2018-12-21 Fri 23:05]
 ** DONE Access Gal and Noam budget sheet.
    CLOSED: [2018-12-03 Mon 22:44]
 * Required functions:
-** DONE [#A] List all entries.
-   CLOSED: [2018-12-21 Fri 23:08]
 ** TODO [#A] Create a new sheet.
 ** TODO Show summary, (make sure its synced with sheet.)
 *** DONE Show summary
     CLOSED: [2018-12-21 Fri 23:08]
 *** Sync summary with sheets. 
+** DONE [#A] List all entries.
+   CLOSED: [2018-12-21 Fri 23:08]
 ** DONE [#C] Add new entry for Gal or Noam
    CLOSED: [2018-12-21 Fri 23:08]
    * Date
