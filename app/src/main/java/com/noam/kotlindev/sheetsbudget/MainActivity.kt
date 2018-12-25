@@ -16,14 +16,11 @@ import com.noam.kotlindev.sheetsbudget.constants.SpreadSheetInfo
 import com.noam.kotlindev.sheetsbudget.info.AccountInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetDeleteRangeRequest
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestHandler
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.*
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.DELETE_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.GET_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.Companion.UPDATE_RESULT
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder.SheetRequestRunner
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetUpdateRequest
 import com.noam.kotlindev.sheetsbudget.sheetsAPIrequestsHandlerThread.SheetGetRequest
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.expense_entry.view.*
@@ -52,6 +49,7 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         currentMonthExpense = intent.getSerializableExtra(MONTH_EXPENSE_TAG) as MonthExpenses
         accountCredential =  GoogleAccountCredential.usingOAuth2(
             applicationContext, Arrays.asList(*SpreadSheetInfo.SCOPES)).setBackOff(ExponentialBackOff())!!
+        accountCredential.selectedAccountName = accountEmail
 
         expense_entry_lt.checkbox.visibility = View.GONE
         month_expenses_rv.layoutManager = LinearLayoutManager(this)
@@ -71,6 +69,10 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         sheet = "$month/${year - 2000}"
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
         showCalculatedSums()
+
+
+//        val sheetAddSheetRequest = SheetAddSheetRequest("1/19", SpreadSheetInfo.ID)
+//        sheetRequestHandler.postRequest(sheetRequestRunnerBuilder.buildRequest(sheetAddSheetRequest))
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()

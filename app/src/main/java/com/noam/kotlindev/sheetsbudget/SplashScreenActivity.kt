@@ -20,6 +20,7 @@ import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.constants.SpreadSheetInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
+import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetAddSheetRequest
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestHandler
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
 import com.noam.kotlindev.sheetsbudget.sheetsAPIrequestsHandlerThread.SheetGetRequest
@@ -36,7 +37,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
     private lateinit var monthRequest: SheetGetRequest
     private val sheetRequestHandler = SheetRequestHandler()
     private lateinit var sheetRequestRunnerBuilder: SheetRequestRunnerBuilder
-
+    private lateinit var  sheet: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,8 +59,8 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         val calender = Calendar.getInstance()
         val month = calender.get(Calendar.MONTH).plus(1)
         val year = calender.get(Calendar.YEAR)
-        val sheet = "$month/${year - 2000}"
-
+//        val sheet = "$month/${year - 2000}"
+        sheet = "1/19"
         currentMonthExpense = MonthExpenses(sheet)
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
 
@@ -69,6 +70,11 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
 
     private fun sendRequestToApi(request: SheetRequestRunnerBuilder.SheetRequestRunner) {
         sheetRequestHandler.postRequest(request)
+    }
+
+    private fun addNewSheet(){
+        val sheetAddSheetRequest = SheetAddSheetRequest(sheet, SpreadSheetInfo.ID)
+        sheetRequestHandler.postRequest(sheetRequestRunnerBuilder.buildRequest(sheetAddSheetRequest))
     }
 
     private fun startApp(){
@@ -163,11 +169,13 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
 
     override fun onRequestSuccess(list: List<List<String>>?, resultCode: Int) {
         currentMonthExpense.expenses.clear()
-        list!!.forEach { entry ->
-            if (entry.size == 4){
-                val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
-                    currentMonthExpense.expenses.size.plus(1))
-                currentMonthExpense.addExpense(expense)
+        if (list != null){
+            list!!.forEach { entry ->
+                if (entry.size == 4){
+                    val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
+                        currentMonthExpense.expenses.size.plus(1))
+                    currentMonthExpense.addExpense(expense)
+                }
             }
         }
         startApp()
@@ -181,7 +189,11 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
                 )
             }
             GoogleJsonResponseException::class.java -> {
-                longToast((error as GoogleJsonResponseException).details.message)
+                when((error as GoogleJsonResponseException).details.code){
+                    400 -> addNewSheet()
+                    else ->
+                        longToast((error as GoogleJsonResponseException).details.message)
+                }
             }
             else ->{
                 longToast(error.message!!)
