@@ -23,9 +23,9 @@ class SheetAddSheetRequest(private val sheet: String, private  val  spreadsheetI
         }
         addSheetRequest.properties = sheetProperties
 
-        val newRequest = Request()
-        newRequest.addSheet = addSheetRequest
-        val batchUpdateSpreadsheetRequest = BatchUpdateSpreadsheetRequest().setRequests(arrayListOf(newRequest))
+        val newAddRequest = Request()
+        newAddRequest.addSheet = addSheetRequest
+        val batchUpdateSpreadsheetRequest = BatchUpdateSpreadsheetRequest().setRequests(arrayListOf(newAddRequest))
         sheetApiService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateSpreadsheetRequest).execute()
         return null
     }

@@ -70,9 +70,6 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
         showCalculatedSums()
 
-
-//        val sheetAddSheetRequest = SheetAddSheetRequest("1/19", SpreadSheetInfo.ID)
-//        sheetRequestHandler.postRequest(sheetRequestRunnerBuilder.buildRequest(sheetAddSheetRequest))
         send_btn.setOnClickListener {
             val desc = desc_et.text.toString()
             val amount = amount_et.text.toString()

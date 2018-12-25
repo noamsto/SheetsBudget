@@ -192,7 +192,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
                 when((error as GoogleJsonResponseException).details.code){
                     400 -> addNewSheet()
                     else ->
-                        longToast((error as GoogleJsonResponseException).details.message)
+                        longToast(error.details.message)
                 }
             }
             else ->{
