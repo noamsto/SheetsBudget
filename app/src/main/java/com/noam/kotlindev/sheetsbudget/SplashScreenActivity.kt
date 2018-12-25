@@ -59,8 +59,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         val calender = Calendar.getInstance()
         val month = calender.get(Calendar.MONTH).plus(1)
         val year = calender.get(Calendar.YEAR)
-//        val sheet = "$month/${year - 2000}"
-        sheet = "1/19"
+        val sheet = "$month/${year - 2000}"
         currentMonthExpense = MonthExpenses(sheet)
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
 
