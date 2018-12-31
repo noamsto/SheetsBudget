@@ -94,6 +94,8 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
                             "Google Play Services on your device and relaunch this app.") {
                         okButton { finish() }
                     }.show()
+                }else{
+                    sendRequestToApi(sheetRequestRunnerBuilder.buildRequest(monthRequest))
                 }
             REQUEST_ACCOUNT_PICKER ->
                 if (resultCode == Activity.RESULT_OK && data != null && data.extras != null
@@ -168,13 +170,11 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
 
     override fun onRequestSuccess(list: List<List<String>>?, resultCode: Int) {
         currentMonthExpense.expenses.clear()
-        if (list != null){
-            list!!.forEach { entry ->
-                if (entry.size == 4){
-                    val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
-                        currentMonthExpense.expenses.size.plus(1))
-                    currentMonthExpense.addExpense(expense)
-                }
+        list?.forEach { entry ->
+            if (entry.size == 4){
+                val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
+                    currentMonthExpense.expenses.size.plus(1))
+                currentMonthExpense.addExpense(expense)
             }
         }
         startApp()
