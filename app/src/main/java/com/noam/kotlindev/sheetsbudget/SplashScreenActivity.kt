@@ -15,7 +15,6 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.util.ExponentialBackOff
-import com.google.api.services.sheets.v4.SheetsScopes
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.constants.SpreadSheetInfo
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
@@ -37,7 +36,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
     private lateinit var monthRequest: SheetGetRequest
     private val sheetRequestHandler = SheetRequestHandler()
     private lateinit var sheetRequestRunnerBuilder: SheetRequestRunnerBuilder
-    private lateinit var  sheet: String
+    private val sheet = DateOperations().getMonthYear()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,13 +52,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         if (!isGooglePlayServicesAvailable())
             acquireGooglePlayServices()
 
-
-
         sheetRequestRunnerBuilder = SheetRequestRunnerBuilder(this, accountCredential, this)
-        val calender = Calendar.getInstance()
-        val month = calender.get(Calendar.MONTH).plus(1)
-        val year = calender.get(Calendar.YEAR)
-        val sheet = "$month/${year - 2000}"
         currentMonthExpense = MonthExpenses(sheet)
         monthRequest = SheetGetRequest(sheet, SpreadSheetInfo.ID)
 
@@ -184,7 +177,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         when(error.javaClass){
             UserRecoverableAuthIOException::class.java -> {
                 startActivityForResult(
-                    (error as UserRecoverableAuthIOException).intent, MainActivity.REQUEST_AUTHORIZATION_REQUEST
+                    (error as UserRecoverableAuthIOException).intent, REQUEST_AUTHORIZATION
                 )
             }
             GoogleJsonResponseException::class.java -> {
@@ -202,9 +195,8 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
 
     companion object {
         internal const val REQUEST_ACCOUNT_PICKER = 1000
-        internal const val REQUEST_AUTHORIZATION_REQUEST = 1001
-        internal const val REQUEST_AUTHORIZATION_POST = 1002
-        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1003
+        internal const val REQUEST_AUTHORIZATION = 1001
+        internal const val REQUEST_GOOGLE_PLAY_SERVICES = 1002
         private const val PREF_ACCOUNT_NAME = "accountName"
         private const val TAG = "SplashScreenActivity"
         const val MONTH_EXPENSE_TAG = "month_expense"
