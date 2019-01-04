@@ -17,6 +17,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.util.ExponentialBackOff
 import com.livinglifetechway.quickpermissions_kotlin.runWithPermissions
 import com.noam.kotlindev.sheetsbudget.constants.SpreadSheetInfo
+import com.noam.kotlindev.sheetsbudget.driveAPI.DriveOperations
 import com.noam.kotlindev.sheetsbudget.info.ExpenseEntry
 import com.noam.kotlindev.sheetsbudget.info.MonthExpenses
 import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetAddSheetRequest
@@ -58,6 +59,11 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
 
         if (accountCredential.selectedAccountName == null)
             chooseAccount()
+
+        val driveOps = DriveOperations(applicationContext,accountCredential)
+        doAsync {
+            driveOps.listSpreadSheets()
+        }
     }
 
     private fun sendRequestToApi(request: SheetRequestRunnerBuilder.SheetRequestRunner) {

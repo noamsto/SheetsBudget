@@ -18,7 +18,10 @@ class SheetRequestHandler {
         Log.d(TAG, "Posting sheetRequest to handler.")
         requestsHandler.post(sheetRequest)
     }
-
+    fun postRequest(apiRequest: Runnable){
+        Log.d(TAG, "Posting sheetRequest to handler.")
+        requestsHandler.post(apiRequest)
+    }
     companion object {
         private  const val TAG= "SheetRequestHandler"
     }
