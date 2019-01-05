@@ -32,6 +32,10 @@ enum class SheetStructure(val sheetHeaderObject: SheetHeaderObject){
                 showCustomUi = true
             }
         )),
-    DESCRIPTION(SheetHeaderObject("פירוט:", 2, 0, null )),
-    AMOUNT(SheetHeaderObject("סכום:", 3, 0, null))
+    AMOUNT(SheetHeaderObject("סכום:", 2, 0, null)),
+    DESCRIPTION(SheetHeaderObject("פירוט:", 3, 0, null )),
+    SUMMARY(SheetHeaderObject("סה:\"כ", 5, 0, null)),
+    DIFF(SheetHeaderObject("הפרש:", 7, 0, null))
+
+
 }

@@ -44,7 +44,7 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         setContentView(R.layout.activity_splash_screen)
 
         accountCredential = GoogleAccountCredential.usingOAuth2(
-                applicationContext, Arrays.asList(*SpreadSheetInfo.SCOPES)).setBackOff(ExponentialBackOff())!!
+            applicationContext, Arrays.asList(*SpreadSheetInfo.SCOPES)).setBackOff(ExponentialBackOff())!!
 
         if (!isDeviceOnline()){
             toast("No internet connection, working offline.")
@@ -60,10 +60,10 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
         if (accountCredential.selectedAccountName == null)
             chooseAccount()
 
-        val driveOps = DriveOperations(applicationContext,accountCredential)
-        doAsync {
-            driveOps.listSpreadSheets()
-        }
+//        val driveOps = DriveOperations(applicationContext,accountCredential)
+//        doAsync {
+//            driveOps.listSpreadSheets()
+//        }
     }
 
     private fun sendRequestToApi(request: SheetRequestRunnerBuilder.SheetRequestRunner) {
@@ -170,7 +170,10 @@ class SplashScreenActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRe
     override fun onRequestSuccess(list: List<List<String>>?, resultCode: Int) {
         currentMonthExpense.expenses.clear()
         list?.forEach { entry ->
-            if (entry.size == 4){
+            if (entry.size == 7 && !entry[0].contains("מי") && entry[0] != "" && entry[1] != "" &&
+                entry[2] != "" && entry[3] != ""
+            )
+            {
                 val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3],
                     currentMonthExpense.expenses.size.plus(1))
                 currentMonthExpense.addExpense(expense)

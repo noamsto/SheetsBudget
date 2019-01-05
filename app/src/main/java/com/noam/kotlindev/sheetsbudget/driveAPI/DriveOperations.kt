@@ -8,10 +8,9 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.noam.kotlindev.sheetsbudget.R
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestHandler
-import com.noam.kotlindev.sheetsbudget.sheetsAPI.SheetRequestRunnerBuilder
 
-class DriveOperations(context: Context, credential: GoogleAccountCredential)  {
+
+class DriveOperations(context: Context, credential: GoogleAccountCredential) {
 
 
     private var driveAPI: Drive? = null
@@ -25,23 +24,24 @@ class DriveOperations(context: Context, credential: GoogleAccountCredential)  {
     }
 
 
-    fun listSpreadSheets(){
-        val result= driveAPI!!.files().list().apply {
-            pageSize = 10
-            fields = "mimeType"
-
-        }.execute()
-        for (file in result.files){
-            Log.d(TAG, file.id)
-        }
-
+    fun listSpreadSheets() {
+        var pageToken: String? = null
+        do {
+            val result = driveAPI!!.files().list().apply{
+                q = "mimeType='application/vnd.google-apps.spreadsheet'"
+                spaces = "drive"
+                fields = "nextPageToken, files(id, name)"
+                this.pageToken = pageToken
+            }.execute()
+            for (file in result.files) {
+                Log.d(TAG, "Found file: ${file.name}, ${file.id}")
+            }
+            pageToken = result.nextPageToken
+        } while (pageToken != null)
     }
 
-
-
     companion object {
-        private const val SCOPES = DriveScopes.DRIVE_METADATA_READONLY
         private const val TAG = "DriveOperations"
     }
 
-    }
+}

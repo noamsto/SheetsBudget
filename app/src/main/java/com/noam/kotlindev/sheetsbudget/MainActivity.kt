@@ -109,7 +109,9 @@ class MainActivity : AppCompatActivity(), SheetRequestRunnerBuilder.OnRequestRes
                     currentMonthExpense.expenses.clear()
                     sortedExpenseAdapter.clear()
                     list!!.forEach { entry ->
-                        if (entry.size == 4){
+                        if (entry.size == 7 && !entry[0].contains("מי") && entry[0] != "" && entry[1] != "" &&
+                            entry[2] != "" && entry[3] != "")
+                        {
                             val expense = ExpenseEntry(entry[0], entry[1], entry[2], entry[3], sortedExpenseAdapter.size().plus(1))
                             sortedExpenseAdapter.add(expense)
                             currentMonthExpense.addExpense(expense)
